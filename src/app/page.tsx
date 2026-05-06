@@ -22,7 +22,15 @@ import { moderate } from "@/lib/moderation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Step = "idle" | "approving" | "waiting_approve" | "requesting" | "waiting_tx" | "polling" | "done" | "error";
+type Step =
+  | "idle"
+  | "approving"
+  | "waiting_approve"
+  | "requesting"
+  | "waiting_tx"
+  | "polling"
+  | "done"
+  | "error";
 
 interface VerdictLocal {
   verdictId: number;
@@ -40,7 +48,7 @@ function shortenAddress(addr: string) {
 
 function farcasterShareUrl(roast: string, verdictId: number) {
   const text = encodeURIComponent(
-    `The Roast Court has spoken 🔨 Verdict #${verdictId}:\n\n"${roast.slice(0, 200)}"\n\nGet roasted → presterr.vercel.app/roast`
+    `The Roast Court has spoken 🔨 Verdict #${verdictId}:\n\n"${roast.slice(0, 200)}"\n\nGet roasted → presterr.vercel.app/roast`,
   );
   return `https://warpcast.com/~/compose?text=${text}`;
 }
@@ -158,7 +166,7 @@ export default function Home() {
         for (const log of receipt.logs) {
           if (log.address.toLowerCase() === ROAST_COURT_ADDRESS.toLowerCase()) {
             // First indexed topic after event selector is verdictId
-            if (log.topics.length >= 2) {
+            if (log.topics.length >= 2 && log.topics[1]) {
               newVerdictId = parseInt(log.topics[1], 16);
             }
             break;
@@ -195,8 +203,8 @@ export default function Home() {
             prev.map((v) =>
               v.verdictId === newVerdictId
                 ? { ...v, roast: data.roast, fulfilled: true }
-                : v
-            )
+                : v,
+            ),
           );
           showToast("⚖️ The Court has spoken!");
         } else {
@@ -252,8 +260,8 @@ export default function Home() {
               prev.map((v) =>
                 v.verdictId === verdictId
                   ? { ...v, roast: data.roast, fulfilled: true }
-                  : v
-              )
+                  : v,
+              ),
             );
             showToast("⚖️ The Court has spoken!");
           }
@@ -346,7 +354,9 @@ export default function Home() {
             disabled={isBusy}
             rows={5}
           />
-          <div className={`char-count ${charCount > MAX_CHARS - 100 ? "near-limit" : ""}`}>
+          <div
+            className={`char-count ${charCount > MAX_CHARS - 100 ? "near-limit" : ""}`}
+          >
             {charCount}/{MAX_CHARS}
           </div>
 
@@ -359,8 +369,8 @@ export default function Home() {
                     step === "approving" || step === "waiting_approve"
                       ? "active"
                       : ["requesting", "waiting_tx", "polling"].includes(step)
-                      ? "done"
-                      : ""
+                        ? "done"
+                        : ""
                   }`}
                 />
                 Approving cUSD spend
@@ -371,14 +381,16 @@ export default function Home() {
                     step === "requesting" || step === "waiting_tx"
                       ? "active"
                       : step === "polling"
-                      ? "done"
-                      : ""
+                        ? "done"
+                        : ""
                   }`}
                 />
                 Submitting to the Court
               </div>
               <div className="step-row">
-                <div className={`step-dot ${step === "polling" ? "active" : ""}`} />
+                <div
+                  className={`step-dot ${step === "polling" ? "active" : ""}`}
+                />
                 The Judge deliberates…
               </div>
             </div>
@@ -395,8 +407,8 @@ export default function Home() {
                 {step === "approving" || step === "waiting_approve"
                   ? "Approving…"
                   : step === "requesting" || step === "waiting_tx"
-                  ? "Submitting…"
-                  : "Judge deliberates…"}
+                    ? "Submitting…"
+                    : "Judge deliberates…"}
               </>
             ) : (
               "⚖️ Submit for Judgment — 0.05 cUSD"
