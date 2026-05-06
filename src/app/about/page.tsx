@@ -11,18 +11,20 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <main className="mx-auto max-w-2xl px-4 py-6 sm:py-10 space-y-8">
+    <main className="mx-auto max-w-2xl px-4 py-6 sm:py-10 space-y-10 fade-in-up">
       <header className="flex items-center justify-between">
         <Link
           href="/"
-          className="text-[11px] font-mono uppercase tracking-[0.2em] text-bone/55 hover:text-bone transition"
+          className="text-[11px] font-mono uppercase tracking-[0.2em] text-bone/55 hover:text-bone transition-colors"
         >
           ← Roast Court
         </Link>
       </header>
 
-      <section className="space-y-3">
-        <h1 className="font-display text-3xl tracking-tight">About</h1>
+      <section className="space-y-4">
+        <h1 className="font-display text-4xl sm:text-5xl tracking-tight leading-[0.95]">
+          About the Court
+        </h1>
         <p className="text-base text-bone/85 leading-relaxed">
           Roast Court is the AI-judge primitive from Prester Labs, productized
           for MiniPay&apos;s installed base. You pay {formatPriceLabel(ROAST_PRICE_WEI)} in cUSD,

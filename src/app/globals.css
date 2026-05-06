@@ -1,17 +1,21 @@
 @import "tailwindcss";
 
-/* Custom theme tokens — see plan §Risks for the v4 self-reference pitfall.
- * Each --color-* and --font-* below is a literal value, NOT var(--same-name),
- * which would loop. next/font writes its own --font-display / --font-mono
- * onto <html>; the cascade lets it shadow these values per-element.
+/* Tailwind v4 theme tokens. Each --color-* / --font-* is a literal value —
+ * not var(--same-name) — to avoid the v4 self-reference loop documented in
+ * the project plan §Risks. next/font writes its own --font-display and
+ * --font-mono onto <html> from layout.tsx; the cascade lets next/font's
+ * self-hosted refs shadow these system fallbacks at runtime.
  */
 @theme {
   --color-ink: #0a0a0a;
+  --color-ink-2: #141414;
   --color-bone: #f5efe7;
   --color-ember: #ff8a4c;
+  --color-ember-deep: #c95a1f;
+  --color-mute: #7a7570;
 
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-mono: ui-monospace, "DM Mono", "SFMono-Regular", Menlo, monospace;
+  --font-display: "Playfair Display", "Times New Roman", Georgia, serif;
+  --font-mono: ui-monospace, "DM Mono", "SFMono-Regular", "Menlo", monospace;
 
   --radius-2xl: 1rem;
   --radius-3xl: 1.25rem;
@@ -29,6 +33,29 @@ html, body {
   line-height: 1.5;
   min-height: 100dvh;
   overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* App-wide ambient backdrop — single subtle ember gloss in the top-right.
+ * Render via body::before so it sits behind page content without affecting
+ * any tap targets. Fixed-positioned + pointer-events:none.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60vmax 60vmax at 95% -10%, rgba(255, 138, 76, 0.10), transparent 60%),
+    radial-gradient(40vmax 40vmax at -10% 110%, rgba(255, 138, 76, 0.05), transparent 60%);
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Default link style — components override as needed */
@@ -37,10 +64,76 @@ a {
   text-decoration: none;
 }
 
-/* Selection */
+/* Typography defaults — give the display font tighter optical sizing.
+ * Tailwind utility `font-display` toggles family; this layer adjusts the
+ * intrinsic look once the family is in use.
+ */
+.font-display {
+  font-feature-settings: "ss01", "kern";
+  letter-spacing: -0.01em;
+}
+
 ::selection {
   background: rgba(255, 138, 76, 0.35);
   color: var(--color-bone);
+}
+
+/* Custom scrollbar — subtle, only on mouse hover */
+@media (hover: hover) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(245, 239, 231, 0.10);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(245, 239, 231, 0.20);
+  }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+/* Form-control reset — inputs/textareas inherit body font */
+input, textarea, button, select {
+  font: inherit;
+  color: inherit;
+}
+
+/* Spinner used by RoastButton + a few async states.
+ * Defined here so any component can <span class="spinner" /> without import.
+ */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 999px;
+  display: inline-block;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -2px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Subtle entrance — pages and verdict cards use this on mount */
+.fade-in-up {
+  animation: fadeInUp 0.4s ease-out both;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Focus ring — applied via focus-visible:* in components, this gives the
+ * browser-default a uniform ember tint when components forget to ring.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-ember);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
+  outline: none; /* components define their own focus-visible:ring */
 }
 
 /* Reduce motion respectfully */

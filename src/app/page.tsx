@@ -9,6 +9,7 @@ import { PersonaPicker } from "@/components/PersonaPicker";
 import { DailyTopicBanner } from "@/components/DailyTopicBanner";
 import { StreakBadge } from "@/components/StreakBadge";
 import { OpenInMiniPayButton } from "@/components/OpenInMiniPayButton";
+import { ConnectWallet } from "@/components/ConnectWallet";
 import { RoastButton, type RoastSuccess } from "@/components/RoastButton";
 
 import { ROAST_COURT_ABI, ROAST_COURT_ADDRESS } from "@/lib/contract";
@@ -72,30 +73,40 @@ export default function Home() {
   };
 
   return (
-    <main className="mx-auto max-w-md px-4 py-6 sm:py-10 space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-3xl tracking-tight">Roast Court</h1>
-          <p className="font-mono text-[12px] text-bone/55 -mt-0.5">
-            an AI judge · onchain verdicts · 10¢
+    <main className="mx-auto max-w-md px-4 py-6 sm:py-10 space-y-6 fade-in-up">
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-baseline gap-2">
+            <span aria-hidden className="text-ember/90 text-xl leading-none">⚖</span>
+            <h1 className="font-display text-3xl tracking-tight leading-none">
+              Roast Court
+            </h1>
+          </div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-bone/55 mt-2">
+            AI judge · onchain · 10¢
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-1.5 shrink-0">
           <StreakBadge user={address} />
+          <ConnectWallet />
           <OpenInMiniPayButton />
         </div>
       </header>
 
-      {topic && (
+      {topic ? (
         <DailyTopicBanner
           topic={topic.topic}
           alreadyClaimed={freeClaimedToday}
         />
-      )}
-      {topErr && (
-        <p className="text-xs font-mono text-red-300/80">
-          topic unavailable: {topErr}
+      ) : topErr ? (
+        <p className="text-xs font-mono text-red-300/80 px-3 py-2 rounded-2xl border border-red-500/20 bg-red-500/5">
+          Daily topic unavailable: {topErr}
         </p>
+      ) : (
+        <div
+          aria-hidden
+          className="h-[68px] rounded-2xl border border-bone/10 bg-ink-2/40 animate-pulse"
+        />
       )}
 
       <section className="space-y-3">
@@ -175,7 +186,7 @@ export default function Home() {
 
       {!isConnected && (
         <p className="text-center text-xs font-mono text-bone/50">
-          Connect wallet to play. Inside MiniPay this happens automatically.
+          Connect a wallet to play — Connect button is in the header. Inside MiniPay this happens automatically.
         </p>
       )}
       {isConnected && address && (

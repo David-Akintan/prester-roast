@@ -8,12 +8,35 @@ export interface StatsTilesProps {
   volumeWei: string;
 }
 
-const Tile = ({ label, value, suffix }: { label: string; value: string; suffix?: string }) => (
-  <div className="rounded-2xl border border-bone/10 bg-ink/40 p-4">
-    <div className="text-[10px] uppercase tracking-[0.2em] font-mono text-bone/50">{label}</div>
-    <div className="font-display text-3xl leading-none mt-2">
+const Tile = ({
+  label,
+  value,
+  suffix,
+  accent,
+}: {
+  label: string;
+  value: string;
+  suffix?: string;
+  accent?: boolean;
+}) => (
+  <div
+    className={[
+      "rounded-2xl border p-4 transition-colors",
+      accent
+        ? "border-ember/30 bg-ember/[0.06]"
+        : "border-bone/10 bg-ink-2/40 hover:bg-ink-2/60",
+    ].join(" ")}
+  >
+    <div className="text-[10px] uppercase tracking-[0.22em] font-mono text-bone/50">
+      {label}
+    </div>
+    <div className="font-display text-3xl sm:text-[34px] leading-none mt-2 tabular-nums">
       {value}
-      {suffix && <span className="text-base text-bone/55 font-mono ml-1">{suffix}</span>}
+      {suffix && (
+        <span className="text-base text-bone/55 font-mono ml-1.5 tracking-tight">
+          {suffix}
+        </span>
+      )}
     </div>
   </div>
 );
@@ -21,13 +44,13 @@ const Tile = ({ label, value, suffix }: { label: string; value: string; suffix?:
 export function StatsTiles(props: StatsTilesProps) {
   const volume = formatCusd(BigInt(props.volumeWei || "0"));
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <Tile label="Roasts (all-time)" value={props.total.toLocaleString()} />
+    <div className="grid grid-cols-2 gap-2.5">
+      <Tile label="Roasts (all-time)" value={props.total.toLocaleString()} accent />
       <Tile label="Paid roasts" value={props.paid.toLocaleString()} />
       <Tile label="Last 24h" value={props.last24h.toLocaleString()} />
       <Tile label="Unique wallets · 24h" value={props.uniqueWallets24h.toLocaleString()} />
-      <div className="col-span-2 sm:col-span-4">
-        <Tile label="cUSD volume" value={volume} suffix="cUSD" />
+      <div className="col-span-2">
+        <Tile label="cUSD volume" value={volume} suffix="cUSD" accent />
       </div>
     </div>
   );

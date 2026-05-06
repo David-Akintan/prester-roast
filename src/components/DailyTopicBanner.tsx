@@ -8,22 +8,42 @@ export function DailyTopicBanner({
   alreadyClaimed?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-ember/30 bg-ember/10 px-4 py-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="text-[10px] uppercase tracking-[0.2em] text-ember/90 font-mono">
-          Today's free roast
+    <div
+      className={[
+        "relative rounded-2xl border px-4 py-3.5 overflow-hidden",
+        "transition-colors",
+        alreadyClaimed
+          ? "border-bone/10 bg-ink-2/40"
+          : "border-ember/30 bg-ember/[0.07]",
+      ].join(" ")}
+    >
+      {/* subtle decorative scribble in the corner */}
+      <div
+        aria-hidden
+        className={[
+          "absolute -right-6 -top-6 size-24 rounded-full blur-2xl",
+          alreadyClaimed ? "bg-bone/[0.03]" : "bg-ember/15",
+        ].join(" ")}
+      />
+
+      <div className="relative flex items-baseline justify-between gap-3">
+        <div className="text-[10px] uppercase tracking-[0.22em] font-mono">
+          <span className={alreadyClaimed ? "text-bone/45" : "text-ember/90"}>
+            Today's free roast
+          </span>
         </div>
-        {alreadyClaimed ? (
-          <div className="text-[10px] uppercase tracking-[0.2em] text-bone/50 font-mono">
-            Claimed
-          </div>
-        ) : (
-          <div className="text-[10px] uppercase tracking-[0.2em] text-bone/70 font-mono">
-            One per wallet
-          </div>
-        )}
+        <div className="text-[10px] uppercase tracking-[0.22em] font-mono">
+          {alreadyClaimed ? (
+            <span className="text-bone/45">✓ claimed</span>
+          ) : (
+            <span className="text-bone/55">one per wallet</span>
+          )}
+        </div>
       </div>
-      <div className="font-display text-lg leading-snug mt-1">{topic}</div>
+
+      <p className="relative font-display italic text-xl leading-snug mt-1.5 text-bone">
+        {topic}
+      </p>
     </div>
   );
 }

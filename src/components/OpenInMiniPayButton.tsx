@@ -16,13 +16,16 @@ export function OpenInMiniPayButton({ className }: { className?: string }) {
     <a
       href={openInMiniPayUrl()}
       className={[
-        "inline-flex items-center gap-2 rounded-full bg-bone text-ink",
-        "px-4 py-2 text-sm font-medium hover:bg-bone/90 transition",
+        "inline-flex items-center gap-1.5 rounded-full",
+        "bg-bone/5 text-bone/85 border border-bone/15",
+        "px-3 py-1.5 text-[11px] font-mono",
+        "hover:bg-bone/10 hover:border-bone/25 hover:text-bone",
+        "transition-colors",
         className ?? "",
       ].join(" ")}
     >
       <span aria-hidden>📱</span>
-      Open in MiniPay
+      MiniPay
     </a>
   );
 }

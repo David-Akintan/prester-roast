@@ -18,28 +18,46 @@ export function VerdictCard(props: VerdictCardProps) {
   const { id, user, persona, roast, severity, txHash, timestamp, isFree, ipfsCid } = props;
 
   return (
-    <article className="rounded-3xl border border-bone/15 bg-ink/60 p-5 sm:p-7 space-y-4">
-      <header className="flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.2em] font-mono text-bone/55">
-        <span>Verdict {formatVerdictId(id)}</span>
-        <span>{PERSONA_LABEL[persona]}{isFree ? " · Daily free" : ""}</span>
+    <article className="relative rounded-3xl border border-bone/15 bg-ink-2/60 p-5 sm:p-7 space-y-5 fade-in-up overflow-hidden">
+      {/* corner accent — strong left bar in ember */}
+      <div
+        aria-hidden
+        className="absolute left-0 top-6 bottom-6 w-[3px] rounded-r bg-gradient-to-b from-ember/80 via-ember/40 to-transparent"
+      />
+
+      <header className="flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.22em] font-mono text-bone/55">
+        <span className="font-mono">Verdict {formatVerdictId(id)}</span>
+        <span className="flex items-center gap-2">
+          <span className="text-bone/80">{PERSONA_LABEL[persona]}</span>
+          {isFree && (
+            <span className="rounded-full bg-ember/15 text-ember/90 px-2 py-0.5 text-[9px] tracking-[0.18em]">
+              free
+            </span>
+          )}
+        </span>
       </header>
 
-      <p className="font-display text-2xl leading-snug">{roast}</p>
+      <p className="font-display text-2xl sm:text-[26px] leading-snug text-bone">
+        <span aria-hidden className="text-ember/80 mr-1">"</span>
+        {roast}
+        <span aria-hidden className="text-ember/80 ml-1">"</span>
+      </p>
 
-      <footer className="flex flex-wrap items-center justify-between gap-2 text-[12px] font-mono text-bone/55 pt-2 border-t border-bone/10">
-        <div className="flex items-center gap-3">
+      {typeof severity === "number" && (
+        <SeverityMeter severity={severity} />
+      )}
+
+      <footer className="flex flex-wrap items-center justify-between gap-y-2 gap-x-4 text-[12px] font-mono text-bone/55 pt-3 border-t border-bone/10">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <a
             href={explorerAddressUrl(user)}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-bone/80 transition"
+            className="hover:text-bone transition-colors"
           >
             {truncateAddress(user)}
           </a>
-          {timestamp && <span>· {formatRelativeTime(timestamp)}</span>}
-          {typeof severity === "number" && (
-            <span title="Judge-assigned severity">· severity {severity}/10</span>
-          )}
+          {timestamp && <span className="text-bone/40">· {formatRelativeTime(timestamp)}</span>}
         </div>
         <div className="flex items-center gap-3">
           {txHash && (
@@ -47,9 +65,9 @@ export function VerdictCard(props: VerdictCardProps) {
               href={explorerTxUrl(txHash)}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-bone/80 transition"
+              className="hover:text-bone transition-colors inline-flex items-center gap-1"
             >
-              tx ↗
+              tx <span aria-hidden>↗</span>
             </a>
           )}
           {ipfsCid && (
@@ -57,13 +75,38 @@ export function VerdictCard(props: VerdictCardProps) {
               href={`https://gateway.pinata.cloud/ipfs/${ipfsCid}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-bone/80 transition"
+              className="hover:text-bone transition-colors inline-flex items-center gap-1"
             >
-              ipfs ↗
+              ipfs <span aria-hidden>↗</span>
             </a>
           )}
         </div>
       </footer>
     </article>
+  );
+}
+
+function SeverityMeter({ severity }: { severity: number }) {
+  const clamped = Math.max(1, Math.min(10, severity));
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="text-[10px] uppercase tracking-[0.22em] font-mono text-bone/45 shrink-0">
+        Severity
+      </span>
+      <div className="flex gap-0.5 grow">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <span
+            key={i}
+            className={[
+              "h-1.5 flex-1 rounded-full",
+              i < clamped ? "bg-ember/80" : "bg-bone/10",
+            ].join(" ")}
+          />
+        ))}
+      </div>
+      <span className="text-[11px] font-mono text-bone/70 tabular-nums shrink-0">
+        {clamped}/10
+      </span>
+    </div>
   );
 }

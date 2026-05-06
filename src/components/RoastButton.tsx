@@ -165,13 +165,13 @@ export function RoastButton({
   const label = (() => {
     switch (phase) {
       case "judging":
-        return "Calling the judge…";
+        return "Summoning the judge…";
       case "approving":
         return "Approving cUSD…";
       case "roasting":
-        return "Sealing verdict…";
+        return "Sealing verdict onchain…";
       case "done":
-        return "Done — opening…";
+        return "Verdict in — opening…";
       case "error":
         return "Try again";
       default:
@@ -189,16 +189,25 @@ export function RoastButton({
         disabled={Boolean(disabled) || busy || !address}
         className={[
           "w-full min-h-[56px] rounded-2xl px-5 py-3 font-display text-lg",
-          "transition active:translate-y-px",
-          isFree ? "bg-ember text-ink hover:bg-ember/90" : "bg-bone text-ink hover:bg-bone/90",
-          "disabled:opacity-50 disabled:cursor-not-allowed",
+          "transition-all duration-150 active:translate-y-px",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-ink",
+          "shadow-[0_8px_24px_-12px_rgba(255,138,76,0.4)]",
+          isFree
+            ? "bg-ember text-ink hover:bg-ember/90"
+            : "bg-bone text-ink hover:bg-bone/90 hover:shadow-[0_10px_28px_-10px_rgba(245,239,231,0.3)]",
+          "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
         ].join(" ")}
       >
-        {busy && <span className="inline-block mr-2 align-middle animate-pulse">●</span>}
-        {label}
+        <span className="inline-flex items-center justify-center gap-2.5">
+          {busy && <span className="spinner" aria-hidden />}
+          <span>{label}</span>
+        </span>
       </button>
       {phase === "error" && errMsg && (
-        <p className="text-sm text-red-300/90 font-mono leading-snug" role="alert">
+        <p
+          className="text-sm text-red-300/90 font-mono leading-snug px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/5"
+          role="alert"
+        >
           {errMsg}
         </p>
       )}
