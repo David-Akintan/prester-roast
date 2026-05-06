@@ -1,492 +1,175 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  useAccount,
-  useConnect,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  usePublicClient,
-} from "wagmi";
-import { injected } from "wagmi/connectors";
-import {
-  ROAST_COURT_ADDRESS,
-  CUSD_ADDRESS,
-  ROAST_FEE_CUSD,
-  ROAST_COURT_ABI,
-  ERC20_APPROVE_ABI,
-} from "@/lib/contract";
-import { isMiniPay, getFeeCurrency, hashContent } from "@/lib/minipay";
-import { moderate } from "@/lib/moderation";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import { useAccount, useReadContract } from "wagmi";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { PersonaPicker } from "@/components/PersonaPicker";
+import { DailyTopicBanner } from "@/components/DailyTopicBanner";
+import { StreakBadge } from "@/components/StreakBadge";
+import { OpenInMiniPayButton } from "@/components/OpenInMiniPayButton";
+import { RoastButton, type RoastSuccess } from "@/components/RoastButton";
 
-type Step =
-  | "idle"
-  | "approving"
-  | "waiting_approve"
-  | "requesting"
-  | "waiting_tx"
-  | "polling"
-  | "done"
-  | "error";
+import { ROAST_COURT_ABI, ROAST_COURT_ADDRESS } from "@/lib/contract";
+import { utcDayIndex, type DailyTopic } from "@/lib/topics";
+import { type Persona } from "@/lib/prompts";
+import { truncateAddress } from "@/lib/format";
 
-interface VerdictLocal {
-  verdictId: number;
-  content: string;
-  roast?: string;
-  fulfilled: boolean;
-  timestamp: number;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function shortenAddress(addr: string) {
-  return addr.slice(0, 6) + "…" + addr.slice(-4);
-}
-
-function farcasterShareUrl(roast: string, verdictId: number) {
-  const text = encodeURIComponent(
-    `The Roast Court has spoken 🔨 Verdict #${verdictId}:\n\n"${roast.slice(0, 200)}"\n\nGet roasted → presterr.vercel.app/roast`,
-  );
-  return `https://warpcast.com/~/compose?text=${text}`;
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
+const MIN_CHARS = 10;
+const MAX_CHARS = 280;
 
 export default function Home() {
+  const router = useRouter();
   const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
-  const publicClient = usePublicClient();
 
-  const [content, setContent] = useState("");
-  const [step, setStep] = useState<Step>("idle");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [toast, setToast] = useState("");
-  const [pendingVerdictId, setPendingVerdictId] = useState<number | null>(null);
-  const [verdicts, setVerdicts] = useState<VerdictLocal[]>([]);
-  const [totalVerdicts, setTotalVerdicts] = useState<number>(0);
-  const pollRef = useRef<NodeJS.Timeout>();
+  const [persona, setPersona] = useState<Persona>("brutal");
+  const [input, setInput] = useState("");
+  const [mode, setMode] = useState<"paid" | "free">("paid");
+  const [topic, setTopic] = useState<DailyTopic | null>(null);
+  const [topErr, setTopErr] = useState<string | null>(null);
 
-  const inMiniPay = typeof window !== "undefined" ? isMiniPay() : false;
-
-  // ── Read total verdict count ──────────────────────────────────────────────
-
-  const { data: verdictCount, refetch: refetchCount } = useReadContract({
-    address: ROAST_COURT_ADDRESS,
-    abi: ROAST_COURT_ABI,
-    functionName: "verdictCount",
-  });
-
+  // Fetch today's topic from /api/roast (cached 60s)
   useEffect(() => {
-    if (verdictCount !== undefined) {
-      setTotalVerdicts(Number(verdictCount));
-    }
-  }, [verdictCount]);
-
-  // ── Write contract hooks ──────────────────────────────────────────────────
-
-  const { writeContractAsync: writeApprove } = useWriteContract();
-  const { writeContractAsync: writeRequestRoast } = useWriteContract();
-
-  // ── Toast helper ─────────────────────────────────────────────────────────
-
-  function showToast(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(""), 3500);
-  }
-
-  // ── Handle submit ─────────────────────────────────────────────────────────
-
-  const handleSubmit = useCallback(async () => {
-    if (!isConnected || !address) return;
-
-    const verdict = moderate(content);
-    if (!verdict.ok) {
-      setErrorMsg(verdict.reason || "Submission rejected.");
-      return;
-    }
-
-    setErrorMsg("");
-    setStep("approving");
-
-    try {
-      const feeCurrency = getFeeCurrency();
-      const contentHash = await hashContent(content.trim());
-
-      // Step 1: Approve cUSD spend
-      showToast("Approving 0.05 cUSD spend…");
-      const approveTxHash = await writeApprove({
-        address: CUSD_ADDRESS,
-        abi: ERC20_APPROVE_ABI,
-        functionName: "approve",
-        args: [ROAST_COURT_ADDRESS, ROAST_FEE_CUSD],
-        // @ts-ignore — feeCurrency is a Celo extension
-        ...(feeCurrency ? { feeCurrency } : {}),
-      });
-
-      setStep("waiting_approve");
-      showToast("Confirming approval…");
-
-      if (publicClient) {
-        await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
-      }
-
-      // Step 2: Request roast
-      setStep("requesting");
-      showToast("Submitting to the Court…");
-
-      const roastTxHash = await writeRequestRoast({
-        address: ROAST_COURT_ADDRESS,
-        abi: ROAST_COURT_ABI,
-        functionName: "requestRoast",
-        args: [contentHash as `0x${string}`],
-        // @ts-ignore
-        ...(feeCurrency ? { feeCurrency } : {}),
-      });
-
-      setStep("waiting_tx");
-      showToast("Transaction confirmed. The Judge deliberates…");
-
-      if (publicClient) {
-        const receipt = await publicClient.waitForTransactionReceipt({
-          hash: roastTxHash,
-        });
-
-        // Extract verdictId from RoastRequested event
-        const ROAST_REQUESTED_TOPIC =
-          "0x" + // keccak256("RoastRequested(uint256,address,bytes32,uint256)")
-          "b5c9a4d1f2e3a6c8e7f5d2b1a9c4e6f8d3b2a1c9e8f7d6b5a4c3e2f1d0b9a8c7";
-        // We'll just use the total count to infer verdictId (totalVerdicts was N, new one is N)
-        // More robust: read from event logs
-        let newVerdictId = totalVerdicts;
-
-        // Try to parse from logs
-        for (const log of receipt.logs) {
-          if (log.address.toLowerCase() === ROAST_COURT_ADDRESS.toLowerCase()) {
-            // First indexed topic after event selector is verdictId
-            if (log.topics.length >= 2 && log.topics[1]) {
-              newVerdictId = parseInt(log.topics[1], 16);
-            }
-            break;
-          }
-        }
-
-        setPendingVerdictId(newVerdictId);
-
-        // Add to local list as pending
-        const newVerdict: VerdictLocal = {
-          verdictId: newVerdictId,
-          content: content.trim(),
-          fulfilled: false,
-          timestamp: Date.now(),
-        };
-        setVerdicts((prev) => [newVerdict, ...prev]);
-        setContent("");
-        refetchCount();
-
-        // Step 3: Call our API to trigger the judge backend
-        setStep("polling");
-        const apiRes = await fetch("/api/roast", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            verdictId: newVerdictId,
-            content: newVerdict.content,
-          }),
-        });
-
-        if (apiRes.ok) {
-          const data = await apiRes.json();
-          setVerdicts((prev) =>
-            prev.map((v) =>
-              v.verdictId === newVerdictId
-                ? { ...v, roast: data.roast, fulfilled: true }
-                : v,
-            ),
-          );
-          showToast("⚖️ The Court has spoken!");
-        } else {
-          // Poll for fulfillment (backend may be async)
-          startPolling(newVerdictId);
-        }
-
-        setStep("done");
-        setPendingVerdictId(null);
-      }
-    } catch (err: any) {
-      console.error(err);
-      setStep("error");
-      const msg = err?.shortMessage || err?.message || "Transaction failed";
-      setErrorMsg(msg);
-    }
-  }, [
-    isConnected,
-    address,
-    content,
-    totalVerdicts,
-    writeApprove,
-    writeRequestRoast,
-    publicClient,
-    refetchCount,
-  ]);
-
-  // ── Poll for fulfillment ──────────────────────────────────────────────────
-
-  function startPolling(verdictId: number) {
-    let attempts = 0;
-    const maxAttempts = 12; // 60s total
-
-    pollRef.current = setInterval(async () => {
-      attempts++;
-      try {
-        if (!publicClient) return;
-        const result = await publicClient.readContract({
-          address: ROAST_COURT_ADDRESS,
-          abi: ROAST_COURT_ABI,
-          functionName: "getVerdict",
-          args: [BigInt(verdictId)],
-        });
-
-        const [verdict] = result as any;
-        if (verdict.fulfilled) {
-          clearInterval(pollRef.current);
-          // Fetch roast text from CID or API
-          const apiRes = await fetch(`/api/roast?verdictId=${verdictId}`);
-          if (apiRes.ok) {
-            const data = await apiRes.json();
-            setVerdicts((prev) =>
-              prev.map((v) =>
-                v.verdictId === verdictId
-                  ? { ...v, roast: data.roast, fulfilled: true }
-                  : v,
-              ),
-            );
-            showToast("⚖️ The Court has spoken!");
-          }
-        }
-      } catch {}
-
-      if (attempts >= maxAttempts) {
-        clearInterval(pollRef.current);
-        showToast("Roast is processing — check back shortly.");
-      }
-    }, 5000);
-  }
-
-  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/roast")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`topic fetch ${r.status}`))))
+      .then((j) => {
+        if (!cancelled) setTopic(j as DailyTopic);
+      })
+      .catch((e) => !cancelled && setTopErr(e.message));
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      cancelled = true;
     };
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // Read lastFreeRoast for the connected wallet to know if free is claimable today
+  const { data: lastFree } = useReadContract({
+    address: ROAST_COURT_ADDRESS,
+    abi: ROAST_COURT_ABI,
+    functionName: "lastFreeRoast",
+    args: address ? [address] : undefined,
+    query: { enabled: Boolean(address) },
+  });
 
-  const isBusy =
-    step === "approving" ||
-    step === "waiting_approve" ||
-    step === "requesting" ||
-    step === "waiting_tx" ||
-    step === "polling";
+  const freeClaimedToday = useMemo(() => {
+    if (lastFree === undefined) return false;
+    const lastDay = Number(lastFree as bigint);
+    return lastDay !== 0 && lastDay === utcDayIndex();
+  }, [lastFree]);
 
-  const charCount = content.length;
-  const MAX_CHARS = 2000;
+  const inputForRoast = mode === "free" && topic ? `[${topic.topic}] ${input}`.trim() : input.trim();
+  const inputValid = input.trim().length >= MIN_CHARS && input.trim().length <= MAX_CHARS;
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  const handleSuccess = ({ verdictId }: RoastSuccess) => {
+    router.push(`/verdict/${verdictId.toString()}`);
+  };
 
   return (
-    <div className="app">
-      {/* Header */}
-      <header className="header">
-        <div className="header-logo">
-          <span className="header-gavel">⚖️</span>
-          <span className="header-title">Roast Court</span>
+    <main className="mx-auto max-w-md px-4 py-6 sm:py-10 space-y-6">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-3xl tracking-tight">Roast Court</h1>
+          <p className="font-mono text-[12px] text-bone/55 -mt-0.5">
+            an AI judge · onchain verdicts · 10¢
+          </p>
         </div>
-        <div className="header-sub">by Prester Labs · Celo Mainnet</div>
-        {isConnected && address && (
-          <div className="header-address">{shortenAddress(address)}</div>
-        )}
+        <div className="flex items-center gap-2">
+          <StreakBadge user={address} />
+          <OpenInMiniPayButton />
+        </div>
       </header>
 
-      {/* Stats */}
-      <div className="stat-bar">
-        <div className="stat-pill">
-          <span className="stat-pill-label">Verdicts</span>
-          <span className="stat-pill-value">{totalVerdicts}</span>
+      {topic && (
+        <DailyTopicBanner topic={topic.topic} alreadyClaimed={freeClaimedToday} />
+      )}
+      {topErr && (
+        <p className="text-xs font-mono text-red-300/80">topic unavailable: {topErr}</p>
+      )}
+
+      <section className="space-y-3">
+        <label className="block text-[11px] uppercase tracking-[0.2em] font-mono text-bone/55">
+          Choose a judge
+        </label>
+        <PersonaPicker value={persona} onChange={setPersona} />
+      </section>
+
+      <section className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label
+            htmlFor="roast-input"
+            className="block text-[11px] uppercase tracking-[0.2em] font-mono text-bone/55"
+          >
+            {mode === "free" ? "Your take on the topic" : "What should we roast?"}
+          </label>
+          <span className="text-[11px] font-mono text-bone/40">
+            {input.length}/{MAX_CHARS}
+          </span>
         </div>
-        <div className="stat-pill">
-          <span className="stat-pill-label">Fee</span>
-          <span className="stat-pill-value">0.05 cUSD</span>
-        </div>
-        <div className="stat-pill">
-          <span className="stat-pill-label">Network</span>
-          <span className="stat-pill-value">Celo</span>
-        </div>
+        <textarea
+          id="roast-input"
+          value={input}
+          onChange={(e) => setInput(e.target.value.slice(0, MAX_CHARS))}
+          placeholder={
+            mode === "free"
+              ? "Reply to today's topic — keep it under 280 chars."
+              : "Your startup, your tweet, your CV, your code, your hot take. Whatever's brave enough."
+          }
+          rows={4}
+          className="w-full resize-none rounded-2xl border border-bone/15 bg-ink/40 px-4 py-3 font-mono text-sm leading-relaxed text-bone placeholder:text-bone/30 focus:outline-none focus:border-ember/70 focus:bg-ink/70 transition"
+        />
+      </section>
+
+      {/* Mode toggle — only show free option if topic loaded and not claimed */}
+      <div className="flex gap-2 rounded-full bg-ink/60 border border-bone/10 p-1 text-sm font-mono">
+        <button
+          type="button"
+          onClick={() => setMode("paid")}
+          className={[
+            "flex-1 min-h-[36px] rounded-full px-3 transition",
+            mode === "paid" ? "bg-bone text-ink" : "text-bone/65 hover:text-bone",
+          ].join(" ")}
+        >
+          Paid · 10¢
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("free")}
+          disabled={freeClaimedToday || !topic}
+          className={[
+            "flex-1 min-h-[36px] rounded-full px-3 transition",
+            mode === "free" ? "bg-ember text-ink" : "text-bone/65 hover:text-bone",
+            freeClaimedToday || !topic ? "opacity-40 cursor-not-allowed" : "",
+          ].join(" ")}
+        >
+          Free daily {freeClaimedToday ? "✓" : ""}
+        </button>
       </div>
 
-      {/* Connect — only shown outside MiniPay */}
-      {!isConnected && !inMiniPay && (
-        <div className="connect-panel">
-          <p>
-            Open in MiniPay for the best experience.
-            <br />
-            Or connect your wallet below.
-          </p>
-          <button
-            className="btn-primary"
-            onClick={() => connect({ connector: injected() })}
-          >
-            Connect Wallet
-          </button>
-        </div>
+      <RoastButton
+        persona={persona}
+        userInput={inputForRoast}
+        isFree={mode === "free"}
+        disabled={!inputValid || (mode === "free" && (freeClaimedToday || !topic))}
+        onSuccess={handleSuccess}
+      />
+
+      {!isConnected && (
+        <p className="text-center text-xs font-mono text-bone/50">
+          Connect a wallet to play. Inside MiniPay this happens automatically.
+        </p>
+      )}
+      {isConnected && address && (
+        <p className="text-center text-xs font-mono text-bone/50">
+          signed in as {truncateAddress(address)}
+        </p>
       )}
 
-      {/* Submit form */}
-      {isConnected && (
-        <>
-          <div className="section-label">Submit your take for judgment</div>
-          <textarea
-            className="roast-input"
-            placeholder="Paste your tweet, code snippet, hot take, or life decision. The Judge shows no mercy."
-            value={content}
-            onChange={(e) => setContent(e.target.value.slice(0, MAX_CHARS))}
-            disabled={isBusy}
-            rows={5}
-          />
-          <div
-            className={`char-count ${charCount > MAX_CHARS - 100 ? "near-limit" : ""}`}
-          >
-            {charCount}/{MAX_CHARS}
-          </div>
-
-          {/* Step progress */}
-          {isBusy && (
-            <div style={{ marginBottom: 14 }}>
-              <div className="step-row">
-                <div
-                  className={`step-dot ${
-                    step === "approving" || step === "waiting_approve"
-                      ? "active"
-                      : ["requesting", "waiting_tx", "polling"].includes(step)
-                        ? "done"
-                        : ""
-                  }`}
-                />
-                Approving cUSD spend
-              </div>
-              <div className="step-row">
-                <div
-                  className={`step-dot ${
-                    step === "requesting" || step === "waiting_tx"
-                      ? "active"
-                      : step === "polling"
-                        ? "done"
-                        : ""
-                  }`}
-                />
-                Submitting to the Court
-              </div>
-              <div className="step-row">
-                <div
-                  className={`step-dot ${step === "polling" ? "active" : ""}`}
-                />
-                The Judge deliberates…
-              </div>
-            </div>
-          )}
-
-          <button
-            className="btn-primary"
-            onClick={handleSubmit}
-            disabled={isBusy || content.trim().length < 10}
-          >
-            {isBusy ? (
-              <>
-                <span className="spinner" />
-                {step === "approving" || step === "waiting_approve"
-                  ? "Approving…"
-                  : step === "requesting" || step === "waiting_tx"
-                    ? "Submitting…"
-                    : "Judge deliberates…"}
-              </>
-            ) : (
-              "⚖️ Submit for Judgment — 0.05 cUSD"
-            )}
-          </button>
-
-          {errorMsg && (
-            <div className="error-box">
-              {errorMsg}
-              <br />
-              <button
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "inherit",
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  fontSize: "inherit",
-                  marginTop: 4,
-                }}
-                onClick={() => {
-                  setStep("idle");
-                  setErrorMsg("");
-                }}
-              >
-                Try again
-              </button>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Verdicts list */}
-      {verdicts.length > 0 && (
-        <>
-          <div className="divider" />
-          <div className="section-label">Your verdicts</div>
-          <div className="verdict-list">
-            {verdicts.map((v) => (
-              <div
-                key={v.verdictId}
-                className={`verdict-card ${v.fulfilled ? "fulfilled" : "pending"}`}
-              >
-                <div className="verdict-meta">
-                  <span className="verdict-id">Verdict #{v.verdictId}</span>
-                  <span
-                    className={`verdict-badge ${v.fulfilled ? "fulfilled" : "pending"}`}
-                  >
-                    {v.fulfilled ? "Sentenced" : "Deliberating"}
-                  </span>
-                </div>
-
-                {v.fulfilled && v.roast ? (
-                  <>
-                    <p className="verdict-roast">"{v.roast}"</p>
-                    <button
-                      className="fc-share-btn"
-                      onClick={() =>
-                        window.open(farcasterShareUrl(v.roast!, v.verdictId))
-                      }
-                    >
-                      ↗ Share on Farcaster
-                    </button>
-                  </>
-                ) : (
-                  <p className="verdict-pending-text">
-                    Waiting for the Judge's verdict…
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Toast */}
-      {toast && <div className="toast">{toast}</div>}
-    </div>
+      <footer className="pt-6 border-t border-bone/10 text-center text-[11px] font-mono text-bone/40 space-x-3">
+        <Link href="/stats" className="hover:text-bone/70 transition">/stats</Link>
+        <Link href="/leaderboard" className="hover:text-bone/70 transition">/leaderboard</Link>
+        <Link href="/about" className="hover:text-bone/70 transition">/about</Link>
+      </footer>
+    </main>
   );
 }

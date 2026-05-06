@@ -1,50 +1,64 @@
-"use client";
-
-import { WagmiProvider } from "wagmi";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { config } from "@/lib/wagmi";
-import { useEffect, useState } from "react";
-import { useConnect } from "wagmi";
-import { injected } from "wagmi/connectors";
+import type { Metadata, Viewport } from "next";
+import { Playfair_Display, DM_Mono } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
 
-const queryClient = new QueryClient();
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["700"],
+  style: ["normal", "italic"],
+});
 
-function AutoConnect({ children }: { children: React.ReactNode }) {
-  const { connect } = useConnect();
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  weight: ["400", "500"],
+});
 
-  useEffect(() => {
-    // MiniPay auto-connect: if isMiniPay, skip the connect button entirely
-    if (typeof window !== "undefined" && (window as any).ethereum?.isMiniPay) {
-      connect({ connector: injected() });
-    }
-  }, [connect]);
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://prester-roast.vercel.app";
 
-  return <>{children}</>;
-}
+export const metadata: Metadata = {
+  title: {
+    default: "Roast Court — pay 10¢, get judged onchain",
+    template: "%s · Roast Court",
+  },
+  description:
+    "An AI judge roasts your take for 10¢ in cUSD. Verdict signed and anchored on Celo. By Prester Labs.",
+  metadataBase: new URL(appUrl),
+  openGraph: {
+    title: "Roast Court",
+    description: "Pay 10¢, get roasted onchain by an AI judge.",
+    url: appUrl,
+    siteName: "Roast Court",
+    images: [{ url: "/og-default.png", width: 1200, height: 630 }],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Roast Court",
+    description: "Pay 10¢, get roasted onchain by an AI judge.",
+    images: ["/og-default.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/icon-512.png",
+  },
+};
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-        <meta name="theme-color" content="#0a0a0a" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Mono:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
-        <title>Roast Court</title>
-      </head>
-      <body>
-        <WagmiProvider config={config}>
-          <QueryClientProvider client={queryClient}>
-            <AutoConnect>{children}</AutoConnect>
-          </QueryClientProvider>
-        </WagmiProvider>
+    <html lang="en" className={`${playfair.variable} ${dmMono.variable}`}>
+      <body className="bg-ink text-bone antialiased">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

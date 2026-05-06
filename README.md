@@ -1,74 +1,56 @@
-# Roast Court 🔨
+# prester-roast — app
 
-**Pay 0.05 cUSD · Get roasted by an AI judge · Verdict stored onchain · Share the sentence on Farcaster**
+Next.js 14 App Router. The MiniPay-aware frontend for [prester-roast](../README.md). See [../prester-roast-plan.md](../prester-roast-plan.md) for the full architecture.
 
-<!-- Live: [prester-roast.vercel.app](https://prester-roast.vercel.app) · Contract: [Celoscan](https://celoscan.io/address/0xTODO) · [Demo video](https://youtu.be/TODO) -->
+## Stack
 
-Built for [Celo Proof of Ship May 2026](https://talent.app/~/earn/celo-proof-of-ship) · by [Prester Labs](https://presterr.vercel.app)
+- Next.js 14 (App Router) + TypeScript strict
+- Tailwind CSS v4
+- Wagmi v2 + Viem (`injected()` inside MiniPay; WalletConnect for desktop fallback)
+- `@google/generative-ai` (Gemini 2.5 Flash, JSON mode)
+- Vercel KV (event index, rate-limit, leaderboard sorted-set)
+- Pinata IPFS (full verdict JSON)
+- `next/og` for verdict OG images
 
----
+## Routes
 
-## What it does
+| Path | What |
+|---|---|
+| `/` | Persona picker + roast input → submits to `/api/roast`, then writes onchain |
+| `/verdict/[id]` | Public, shareable verdict page; OG image at `/verdict/[id]/opengraph-image` |
+| `/stats` | Public stats dashboard (24h/7d/all-time tx, DAU, cUSD volume, gas, live feed) |
+| `/leaderboard` | Top-roasted wallets, top community-favorite verdicts |
+| `/about` | Value prop + retention strategy in plain English |
+| `/api/roast` | POST: validates → moderates → calls Gemini → uploads to IPFS → signs verdict |
+| `/api/stats` | KV → JSON for dashboard |
+| `/api/cron/index` | Vercel cron (1 min): pulls new `RoastIssued` events into KV |
 
-Roast Court is a MiniPay mini-app where users pay **0.05 cUSD** to submit any piece of text — a tweet, a hot take, a code snippet, a life decision — and receive a savage AI-generated verdict stored permanently on Celo mainnet.
+## Local development
 
-Each verdict is:
+```bash
+# Install (run from repo root if using workspaces, or here for app-only)
+npm install
 
-- **Onchain** — `verdictId`, content hash, and roast hash written to `RoastCourt.sol`
-- **Shareable** — one-tap Farcaster share with the full sentence
-- **Daily-replayable** — every new submission is a new tx, naturally incentivizing return visits
+# Dev
+npm run dev
 
-This is a productized slice of Prester's AI judge primitive. The full [Prester protocol](https://presterr.vercel.app) uses a multi-judge committee for freelance dispute resolution; Roast Court extracts the single-judge verdict loop and packages it for MiniPay's 14M wallets.
-
----
-
-## Architecture
-
-```
-User (MiniPay)
-  │  feeCurrency: USDm, legacy tx
-  ▼
-RoastCourt.sol (Celo Mainnet)
-  ├── approve(cUSD, 0.05) ← user signs
-  └── requestRoast(contentHash) ← emits RoastRequested(verdictId)
-        │
-        ▼
-Next.js API /api/roast
-  └── POST → Prester judge backend
-        └── fulfillRoast(verdictId, roastHash, cid) ← backend signs
-```
-
-**Key design choices for PoS scoring:**
-
-- Every user action = 1 ERC-20 approve + 1 contract call = 2 tx per roast
-- Users can submit daily → compounds tx count
-- No multi-party coordination required (unlike Prester's escrow)
-
----
-
-## Project structure
-
-```
-prester-roast/
-├── contracts/
-│   ├── RoastCourt.sol          # Core contract
-│   ├── hardhat.config.js
-│   └── scripts/deploy.js
-└── app/
-    └── src/
-        ├── app/
-        │   ├── page.tsx         # Main UI
-        │   ├── layout.tsx       # Wagmi provider + auto-connect
-        │   ├── globals.css
-        │   └── api/roast/
-        │       └── route.ts     # Calls Prester judge backend
-        └── lib/
+# Test in MiniPay (real device, requires deploy URL)
+npx ngrok http 3000
+# → load the ngrok URL in MiniPay → Settings → Developer Mode → Load Test Page
 ```
 
----
+## Env vars
 
-## About Prester Labs
+See [.env.example](.env.example). Public `NEXT_PUBLIC_*` vars are exposed to the browser; everything else is server-only.
 
-Prester is a decentralized freelance marketplace where disputes are resolved by a committee of AI judges using commit-reveal voting. Roast Court is a standalone primitive that stress-tests the single-judge verdict loop at consumer scale on MiniPay. Learnings feed back into Prester's multi-judge architecture.
+The judge signing key (`JUDGE_SIGNER_PRIVATE_KEY`) is the only sensitive secret — and it can only authorize signed verdicts, not move funds.
 
-- Flagship: [presterr.vercel.app](https://presterr.vercel.app)
+## MiniPay compatibility
+
+| Requirement | Status |
+|---|---|
+| `window.ethereum.isMiniPay` auto-connect | Phase 4 |
+| `feeCurrency: cUSD` legacy tx | Phase 4 |
+| 360×720 mobile layout, 44px+ touch targets | Phase 4 |
+| No WalletConnect inside MiniPay | Phase 4 |
+| Stablecoin-only (cUSD) | ✅ contract |

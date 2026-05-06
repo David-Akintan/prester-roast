@@ -1,36 +1,40 @@
 {
   "name": "prester-roast-app",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "clean": "npx rimraf .next tsconfig.tsbuildinfo"
+    "clean": "rimraf .next tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@tanstack/query-core": "^5.97.0",
+    "@google/generative-ai": "^0.21.0",
+    "@tailwindcss/postcss": "^4.0.0",
     "@tanstack/react-query": "^5.62.7",
-    "ethers": "^6.0.0",
+    "@vercel/kv": "^3.0.0",
+    "ethers": "^6.13.0",
     "framer-motion": "^11.2.0",
     "next": "14.2.3",
-    "react": "^18",
-    "react-dom": "^18",
-    "tailwind-merge": "^2.0.0",
-    "viem": "^2.13.0",
-    "wagmi": "^2.10.0"
+    "pinata": "^1.7.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.0",
+    "viem": "^2.21.0",
+    "wagmi": "^2.13.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "autoprefixer": "^10.5.0",
-    "eslint": "^8",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.0",
     "eslint-config-next": "14.2.3",
-    "postcss": "^8.5.14",
-    "tailwindcss": "^4.2.4",
-    "typescript": "^5"
+    "postcss": "^8.4.47",
+    "rimraf": "^6.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.5.0"
   }
 }

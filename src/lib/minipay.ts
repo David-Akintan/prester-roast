@@ -1,33 +1,32 @@
-/**
- * Detect whether the app is running inside MiniPay.
- * MiniPay sets window.ethereum.isMiniPay = true.
- * Must be called client-side only.
- */
+import { keccak256, toBytes } from "viem";
+import { CUSD_ADDRESS } from "./contract";
+
+// MiniPay sets window.ethereum.isMiniPay = true. Use this to gate UI
+// (no Connect button inside MiniPay) and to set legacy-tx fields.
 export function isMiniPay(): boolean {
   if (typeof window === "undefined") return false;
-  return !!(window as any).ethereum?.isMiniPay;
+  return Boolean((window as { ethereum?: { isMiniPay?: boolean } }).ethereum?.isMiniPay);
 }
 
-/**
- * Returns the feeCurrency address to use for transactions.
- * MiniPay requires legacy transactions with feeCurrency set to USDm or cUSD.
- * Outside MiniPay we return undefined (standard EIP-1559).
- */
+// Inside MiniPay we MUST send legacy txs with feeCurrency set to a stable
+// (cUSD per plan §Wallet, line 502-509). Outside MiniPay → undefined =
+// standard EIP-1559 path.
 export function getFeeCurrency(): `0x${string}` | undefined {
   if (!isMiniPay()) return undefined;
-  // USDm — preferred feeCurrency in MiniPay
-  return "0x4F604735c1cF31399C6E711D5962b2B3E0225AD3";
+  return CUSD_ADDRESS;
 }
 
-/**
- * Compute keccak256 hash of a UTF-8 string using the Web Crypto API.
- * Returns a 0x-prefixed hex string compatible with bytes32.
- */
-export async function hashContent(text: string): Promise<`0x${string}`> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-  return `0x${hashHex}` as `0x${string}`;
+// keccak256 over UTF-8 bytes — the contract's signed-message hash and the
+// content/inputHash arguments must match what the server signs. Server uses
+// ethers' `keccak256(toUtf8Bytes(s))`; viem's `keccak256(toBytes(s))` is the
+// byte-identical equivalent.
+export function hashUtf8(text: string): `0x${string}` {
+  return keccak256(toBytes(text));
+}
+
+// Render a deeplink to open this URL inside MiniPay on devices that have it.
+// Used by the "Open in MiniPay" fallback button when not in MiniPay.
+export function openInMiniPayUrl(targetUrl?: string): string {
+  const url = targetUrl ?? (typeof window !== "undefined" ? window.location.href : "");
+  return `https://minipay.opera.com/?url=${encodeURIComponent(url)}`;
 }
