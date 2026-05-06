@@ -33,7 +33,9 @@ export default function Home() {
   useEffect(() => {
     let cancelled = false;
     fetch("/api/roast")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`topic fetch ${r.status}`))))
+      .then((r) =>
+        r.ok ? r.json() : Promise.reject(new Error(`topic fetch ${r.status}`)),
+      )
       .then((j) => {
         if (!cancelled) setTopic(j as DailyTopic);
       })
@@ -58,8 +60,12 @@ export default function Home() {
     return lastDay !== 0 && lastDay === utcDayIndex();
   }, [lastFree]);
 
-  const inputForRoast = mode === "free" && topic ? `[${topic.topic}] ${input}`.trim() : input.trim();
-  const inputValid = input.trim().length >= MIN_CHARS && input.trim().length <= MAX_CHARS;
+  const inputForRoast =
+    mode === "free" && topic
+      ? `[${topic.topic}] ${input}`.trim()
+      : input.trim();
+  const inputValid =
+    input.trim().length >= MIN_CHARS && input.trim().length <= MAX_CHARS;
 
   const handleSuccess = ({ verdictId }: RoastSuccess) => {
     router.push(`/verdict/${verdictId.toString()}`);
@@ -81,10 +87,15 @@ export default function Home() {
       </header>
 
       {topic && (
-        <DailyTopicBanner topic={topic.topic} alreadyClaimed={freeClaimedToday} />
+        <DailyTopicBanner
+          topic={topic.topic}
+          alreadyClaimed={freeClaimedToday}
+        />
       )}
       {topErr && (
-        <p className="text-xs font-mono text-red-300/80">topic unavailable: {topErr}</p>
+        <p className="text-xs font-mono text-red-300/80">
+          topic unavailable: {topErr}
+        </p>
       )}
 
       <section className="space-y-3">
@@ -100,7 +111,9 @@ export default function Home() {
             htmlFor="roast-input"
             className="block text-[11px] uppercase tracking-[0.2em] font-mono text-bone/55"
           >
-            {mode === "free" ? "Your take on the topic" : "What should we roast?"}
+            {mode === "free"
+              ? "Your take on the topic"
+              : "What should we roast?"}
           </label>
           <span className="text-[11px] font-mono text-bone/40">
             {input.length}/{MAX_CHARS}
@@ -127,7 +140,9 @@ export default function Home() {
           onClick={() => setMode("paid")}
           className={[
             "flex-1 min-h-[36px] rounded-full px-3 transition",
-            mode === "paid" ? "bg-bone text-ink" : "text-bone/65 hover:text-bone",
+            mode === "paid"
+              ? "bg-bone text-ink"
+              : "text-bone/65 hover:text-bone",
           ].join(" ")}
         >
           Paid · 10¢
@@ -138,7 +153,9 @@ export default function Home() {
           disabled={freeClaimedToday || !topic}
           className={[
             "flex-1 min-h-[36px] rounded-full px-3 transition",
-            mode === "free" ? "bg-ember text-ink" : "text-bone/65 hover:text-bone",
+            mode === "free"
+              ? "bg-ember text-ink"
+              : "text-bone/65 hover:text-bone",
             freeClaimedToday || !topic ? "opacity-40 cursor-not-allowed" : "",
           ].join(" ")}
         >
@@ -150,13 +167,15 @@ export default function Home() {
         persona={persona}
         userInput={inputForRoast}
         isFree={mode === "free"}
-        disabled={!inputValid || (mode === "free" && (freeClaimedToday || !topic))}
+        disabled={
+          !inputValid || (mode === "free" && (freeClaimedToday || !topic))
+        }
         onSuccess={handleSuccess}
       />
 
       {!isConnected && (
         <p className="text-center text-xs font-mono text-bone/50">
-          Connect a wallet to play. Inside MiniPay this happens automatically.
+          Connect wallet to play. Inside MiniPay this happens automatically.
         </p>
       )}
       {isConnected && address && (
@@ -166,9 +185,15 @@ export default function Home() {
       )}
 
       <footer className="pt-6 border-t border-bone/10 text-center text-[11px] font-mono text-bone/40 space-x-3">
-        <Link href="/stats" className="hover:text-bone/70 transition">/stats</Link>
-        <Link href="/leaderboard" className="hover:text-bone/70 transition">/leaderboard</Link>
-        <Link href="/about" className="hover:text-bone/70 transition">/about</Link>
+        <Link href="/stats" className="hover:text-bone/70 transition">
+          /stats
+        </Link>
+        <Link href="/leaderboard" className="hover:text-bone/70 transition">
+          /leaderboard
+        </Link>
+        <Link href="/about" className="hover:text-bone/70 transition">
+          /about
+        </Link>
       </footer>
     </main>
   );
