@@ -1,0 +1,36 @@
+{
+  "name": "prester-roast-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "clean": "npx rimraf .next tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@tanstack/query-core": "^5.97.0",
+    "@tanstack/react-query": "^5.62.7",
+    "ethers": "^6.0.0",
+    "framer-motion": "^11.2.0",
+    "next": "14.2.3",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwind-merge": "^2.0.0",
+    "viem": "^2.13.0",
+    "wagmi": "^2.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.5.0",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.3",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.2.4",
+    "typescript": "^5"
+  }
+}
