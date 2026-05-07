@@ -44,15 +44,15 @@ export default async function StatsPage() {
       <section className="space-y-3">
         <h2 className="font-display text-xl">Latest verdicts</h2>
         {stats.feed.length === 0 ? (
-          <div className="rounded-2xl border border-bone/10 bg-ink-2/40 p-8 text-center text-sm text-bone/55 font-mono">
+          <div className="rounded-none border-2 border-[#262626] bg-[#161618] p-8 text-center text-sm text-bone/55 font-mono">
             No verdicts indexed yet. <span className="text-bone/85">Check back in a minute.</span>
           </div>
         ) : (
-          <ul className="rounded-2xl border border-bone/10 bg-ink-2/40 divide-y divide-bone/[0.06] overflow-hidden">
+          <ul className="rounded-none border-2 border-[#262626] bg-[#161618] divide-y-2 divide-[#262626] overflow-hidden">
             {stats.feed.map((entry) => (
               <li
                 key={`${entry.txHash}:${entry.id}`}
-                className="px-4 py-3 flex items-center justify-between gap-3 text-sm font-mono hover:bg-bone/[0.03] transition-colors"
+                className="px-4 py-3 flex items-center justify-between gap-3 text-sm font-mono hover:bg-ember/[0.06] transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <Link

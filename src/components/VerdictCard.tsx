@@ -18,19 +18,19 @@ export function VerdictCard(props: VerdictCardProps) {
   const { id, user, persona, roast, severity, txHash, timestamp, isFree, ipfsCid } = props;
 
   return (
-    <article className="relative rounded-3xl border border-bone/15 bg-ink-2/60 p-5 sm:p-7 space-y-5 fade-in-up overflow-hidden">
+    <article className="relative rounded-none border-2 border-[#262626] bg-[#161618] p-5 sm:p-7 space-y-5 fade-in-up overflow-hidden">
       {/* corner accent — strong left bar in ember */}
       <div
         aria-hidden
-        className="absolute left-0 top-6 bottom-6 w-[3px] rounded-r bg-gradient-to-b from-ember/80 via-ember/40 to-transparent"
+        className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-ember via-ember/60 to-ember/20"
       />
 
-      <header className="flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.22em] font-mono text-bone/55">
+      <header className="flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.25em] font-mono text-bone/55">
         <span className="font-mono">Verdict {formatVerdictId(id)}</span>
         <span className="flex items-center gap-2">
           <span className="text-bone/80">{PERSONA_LABEL[persona]}</span>
           {isFree && (
-            <span className="rounded-full bg-ember/15 text-ember/90 px-2 py-0.5 text-[9px] tracking-[0.18em]">
+            <span className="rounded-none border-2 border-ember/60 bg-ember/15 text-ember px-2 py-0.5 text-[9px] tracking-[0.18em]">
               free
             </span>
           )}
@@ -47,7 +47,7 @@ export function VerdictCard(props: VerdictCardProps) {
         <SeverityMeter severity={severity} />
       )}
 
-      <footer className="flex flex-wrap items-center justify-between gap-y-2 gap-x-4 text-[12px] font-mono text-bone/55 pt-3 border-t border-bone/10">
+      <footer className="flex flex-wrap items-center justify-between gap-y-2 gap-x-4 text-[12px] font-mono text-bone/55 pt-3 border-t-2 border-[#262626]">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <a
             href={explorerAddressUrl(user)}
@@ -98,8 +98,8 @@ function SeverityMeter({ severity }: { severity: number }) {
           <span
             key={i}
             className={[
-              "h-1.5 flex-1 rounded-full",
-              i < clamped ? "bg-ember/80" : "bg-bone/10",
+              "h-1.5 flex-1 rounded-none",
+              i < clamped ? "bg-ember" : "bg-[#262626]",
             ].join(" ")}
           />
         ))}

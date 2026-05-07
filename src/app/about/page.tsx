@@ -103,7 +103,7 @@ export default function AboutPage() {
         </p>
       </section>
 
-      <footer className="pt-6 border-t border-bone/10 text-[11px] font-mono text-bone/40 space-y-1">
+      <footer className="pt-6 border-t-2 border-[#262626] text-[11px] font-mono text-bone/40 space-y-1 uppercase tracking-[0.15em]">
         <p>Built by Prester Labs for Celo Proof of Ship.</p>
         <p>
           Source:{" "}

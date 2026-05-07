@@ -99,13 +99,13 @@ export default function Home() {
           alreadyClaimed={freeClaimedToday}
         />
       ) : topErr ? (
-        <p className="text-xs font-mono text-red-300/80 px-3 py-2 rounded-2xl border border-red-500/20 bg-red-500/5">
+        <p className="text-xs font-mono text-red-300 px-3 py-2 rounded-none border-2 border-red-500/60 bg-red-500/10">
           Daily topic unavailable: {topErr}
         </p>
       ) : (
         <div
           aria-hidden
-          className="h-[68px] rounded-2xl border border-bone/10 bg-ink-2/40 animate-pulse"
+          className="h-[68px] rounded-none border-2 border-[#262626] bg-[#161618] animate-pulse"
         />
       )}
 
@@ -140,20 +140,20 @@ export default function Home() {
               : "Your startup, your tweet, your CV, your code, your hot take. Whatever's brave enough."
           }
           rows={4}
-          className="w-full resize-none rounded-2xl border border-bone/15 bg-ink/40 px-4 py-3 font-mono text-sm leading-relaxed text-bone placeholder:text-bone/30 focus:outline-none focus:border-ember/70 focus:bg-ink/70 transition"
+          className="w-full resize-none rounded-none border-2 border-[#262626] bg-[#161618] px-4 py-3 font-mono text-sm leading-relaxed text-bone placeholder:text-bone/30 focus:outline-none focus:border-ember focus:ring-2 focus:ring-ember/40 transition-all"
         />
       </section>
 
       {/* Mode toggle — only show free option if topic loaded and not claimed */}
-      <div className="flex gap-2 rounded-full bg-ink/60 border border-bone/10 p-1 text-sm font-mono">
+      <div className="flex gap-0 rounded-none bg-[#161618] border-2 border-[#262626] text-sm font-mono">
         <button
           type="button"
           onClick={() => setMode("paid")}
           className={[
-            "flex-1 min-h-[36px] rounded-full px-3 transition",
+            "flex-1 min-h-[40px] rounded-none px-3 uppercase tracking-[0.15em] transition-all border-r-2 border-[#262626]",
             mode === "paid"
               ? "bg-bone text-ink"
-              : "text-bone/65 hover:text-bone",
+              : "text-bone/65 hover:text-bone hover:bg-bone/5",
           ].join(" ")}
         >
           Paid · 10¢
@@ -163,10 +163,10 @@ export default function Home() {
           onClick={() => setMode("free")}
           disabled={freeClaimedToday || !topic}
           className={[
-            "flex-1 min-h-[36px] rounded-full px-3 transition",
+            "flex-1 min-h-[40px] rounded-none px-3 uppercase tracking-[0.15em] transition-all",
             mode === "free"
               ? "bg-ember text-ink"
-              : "text-bone/65 hover:text-bone",
+              : "text-bone/65 hover:text-bone hover:bg-bone/5",
             freeClaimedToday || !topic ? "opacity-40 cursor-not-allowed" : "",
           ].join(" ")}
         >
@@ -195,7 +195,7 @@ export default function Home() {
         </p>
       )}
 
-      <footer className="pt-6 border-t border-bone/10 text-center text-[11px] font-mono text-bone/40 space-x-3">
+      <footer className="pt-6 border-t-2 border-[#262626] text-center text-[11px] font-mono text-bone/40 space-x-3 uppercase tracking-[0.15em]">
         <Link href="/stats" className="hover:text-bone/70 transition">
           /stats
         </Link>

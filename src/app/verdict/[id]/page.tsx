@@ -154,7 +154,7 @@ export default async function VerdictPage({ params }: { params: { id: string } }
 
       <Link
         href="/"
-        className="block w-full text-center min-h-[56px] py-4 rounded-2xl bg-ember text-ink font-display text-lg hover:bg-ember/90 transition-colors shadow-[0_8px_24px_-12px_rgba(255,138,76,0.5)]"
+        className="lift block w-full text-center min-h-[56px] py-4 rounded-none border-2 border-ember bg-gradient-to-b from-ember to-ember-deep text-ink font-display text-lg hover:from-[#ff7355] hover:to-ember shadow-[0_8px_24px_-4px_rgba(255,87,51,0.45)]"
       >
         Get your own roast
       </Link>
@@ -175,7 +175,7 @@ function ShareRow({ id }: { id: string }) {
         href={farcaster}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center justify-center gap-2 min-h-[48px] px-3 rounded-2xl bg-bone/[0.06] border border-bone/10 hover:bg-bone/10 hover:border-bone/25 text-bone/85 hover:text-bone font-mono text-sm transition-colors"
+        className="lift inline-flex items-center justify-center gap-2 min-h-[48px] px-3 rounded-none border-2 border-[#262626] bg-[#161618] hover:border-ember hover:text-ember text-bone/85 font-mono text-sm uppercase tracking-[0.15em]"
       >
         Cast on Farcaster
       </a>
@@ -183,7 +183,7 @@ function ShareRow({ id }: { id: string }) {
         href={twitter}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center justify-center gap-2 min-h-[48px] px-3 rounded-2xl bg-bone/[0.06] border border-bone/10 hover:bg-bone/10 hover:border-bone/25 text-bone/85 hover:text-bone font-mono text-sm transition-colors"
+        className="lift inline-flex items-center justify-center gap-2 min-h-[48px] px-3 rounded-none border-2 border-[#262626] bg-[#161618] hover:border-ember hover:text-ember text-bone/85 font-mono text-sm uppercase tracking-[0.15em]"
       >
         Post on X
       </a>

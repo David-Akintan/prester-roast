@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, DM_Mono } from "next/font/google";
+import { Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -10,10 +10,10 @@ const playfair = Playfair_Display({
   style: ["normal", "italic"],
 });
 
-const dmMono = DM_Mono({
+const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
 });
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://prester-roast.vercel.app";
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#0a0a0b",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -56,7 +56,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${dmMono.variable}`}>
+    <html lang="en" className={`${playfair.variable} ${jetbrains.variable}`}>
       <body className="bg-ink text-bone antialiased">
         <Providers>{children}</Providers>
       </body>

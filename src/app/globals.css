@@ -7,15 +7,16 @@
  * self-hosted refs shadow these system fallbacks at runtime.
  */
 @theme {
-  --color-ink: #0a0a0a;
-  --color-ink-2: #141414;
+  --color-ink: #0a0a0b;
+  --color-ink-2: #161618;
   --color-bone: #f5efe7;
-  --color-ember: #ff8a4c;
-  --color-ember-deep: #c95a1f;
+  --color-ember: #ff5733;
+  --color-ember-deep: #c8341a;
   --color-mute: #7a7570;
+  --color-card-border: #262626;
 
   --font-display: "Playfair Display", "Times New Roman", Georgia, serif;
-  --font-mono: ui-monospace, "DM Mono", "SFMono-Regular", "Menlo", monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
 
   --radius-2xl: 1rem;
   --radius-3xl: 1.25rem;
@@ -49,8 +50,23 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(60vmax 60vmax at 95% -10%, rgba(255, 138, 76, 0.10), transparent 60%),
-    radial-gradient(40vmax 40vmax at -10% 110%, rgba(255, 138, 76, 0.05), transparent 60%);
+    radial-gradient(60vmax 60vmax at 95% -10%, rgba(255, 87, 51, 0.10), transparent 60%),
+    radial-gradient(40vmax 40vmax at -10% 110%, rgba(255, 87, 51, 0.05), transparent 60%);
+}
+
+/* Noise texture overlay — premium grain on the dark backdrop. SVG turbulence
+ * filter inlined as a data URI; opacity kept low so it reads as texture, not
+ * static. mix-blend overlay tints with the underlying ink/ember gradients.
+ */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.04;
+  mix-blend-mode: overlay;
 }
 
 body > * {
@@ -74,8 +90,29 @@ a {
 }
 
 ::selection {
-  background: rgba(255, 138, 76, 0.35);
+  background: rgba(255, 87, 51, 0.35);
   color: var(--color-bone);
+}
+
+/* Active-state glow for selected cards / accent surfaces. Pairs with a 2px
+ * ember border on the element to read as a brutalist halo. */
+.glow-ember {
+  box-shadow:
+    0 0 0 2px var(--color-ember),
+    0 0 24px -4px rgba(255, 87, 51, 0.55),
+    inset 0 0 0 1px rgba(255, 87, 51, 0.35);
+}
+
+/* Hover-lift utility — translate-y(-2px) on any non-disabled interactive
+ * element. Centralized so component className strings stay terse. */
+.lift {
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+.lift:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.lift:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 /* Custom scrollbar — subtle, only on mouse hover */

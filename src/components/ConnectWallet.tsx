@@ -35,7 +35,7 @@ export function ConnectWallet() {
         type="button"
         onClick={() => switchChain({ chainId: celo.id })}
         disabled={switchPending}
-        className="inline-flex items-center gap-2 rounded-full bg-red-500/15 border border-red-400/40 text-red-200 px-3 py-1.5 text-xs font-mono hover:bg-red-500/25 transition disabled:opacity-50"
+        className="lift inline-flex items-center gap-2 rounded-none border-2 border-red-400/70 bg-red-500/15 text-red-200 px-3 py-1.5 text-xs font-mono uppercase tracking-[0.15em] hover:bg-red-500/25 disabled:opacity-50"
       >
         {switchPending ? "Switching…" : "Switch to Celo"}
       </button>
@@ -45,7 +45,7 @@ export function ConnectWallet() {
   // Connected on Celo — show truncated-address chip with disconnect
   if (isConnected && address) {
     return (
-      <div className="inline-flex items-center gap-1.5 rounded-full bg-bone/5 border border-bone/15 px-3 py-1 text-[11px] font-mono text-bone/85">
+      <div className="lift inline-flex items-center gap-1.5 rounded-none border-2 border-[#262626] bg-[#161618] px-3 py-1 text-[11px] font-mono uppercase tracking-[0.15em] text-bone/85 hover:border-ember/60">
         <span className="size-1.5 rounded-full bg-emerald-400" aria-label="connected" />
         <span>{truncateAddress(address)}</span>
         <button
@@ -75,7 +75,7 @@ export function ConnectWallet() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-full bg-bone text-ink px-3 py-1.5 text-xs font-medium hover:bg-bone/90 transition"
+        className="lift inline-flex items-center gap-2 rounded-none border-2 border-bone bg-gradient-to-b from-bone to-[#d6cfc3] text-ink px-3 py-1.5 text-xs font-mono uppercase tracking-[0.15em] hover:from-white"
       >
         Connect
       </button>
@@ -90,7 +90,7 @@ export function ConnectWallet() {
           />
           <div
             role="menu"
-            className="absolute right-0 top-full mt-2 z-50 min-w-[200px] rounded-2xl border border-bone/15 bg-ink/95 backdrop-blur p-1 shadow-2xl"
+            className="absolute right-0 top-full mt-2 z-50 min-w-[200px] rounded-none border-2 border-[#262626] bg-[#0a0a0b]/95 backdrop-blur-[5px] p-1 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.8)]"
           >
             {visibleConnectors.length === 0 ? (
               <p className="text-[11px] font-mono text-bone/55 px-3 py-2 leading-snug">
@@ -106,7 +106,7 @@ export function ConnectWallet() {
                     connect({ connector: c });
                     setOpen(false);
                   }}
-                  className="block w-full text-left px-3 py-2 rounded-xl text-sm font-mono text-bone/85 hover:bg-bone/10 transition disabled:opacity-50"
+                  className="block w-full text-left px-3 py-2 rounded-none text-sm font-mono text-bone/85 hover:bg-ember/15 hover:text-ember transition disabled:opacity-50"
                 >
                   {labelFor(c.id, c.name)}
                 </button>

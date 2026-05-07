@@ -23,7 +23,7 @@ export function PersonaPicker({
   disabled?: boolean;
 }) {
   return (
-    <fieldset className="grid grid-cols-3 gap-2" aria-label="Pick a judge persona">
+    <fieldset className="grid grid-cols-3 gap-2.5" aria-label="Pick a judge persona">
       {PERSONAS.map((p) => {
         const active = p === value;
         return (
@@ -34,12 +34,11 @@ export function PersonaPicker({
             onClick={() => onChange(p)}
             aria-pressed={active}
             className={[
-              "group relative min-h-[76px] rounded-2xl border px-3 py-3 text-left",
-              "transition-all duration-150",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink",
+              "lift group relative min-h-[88px] rounded-none border-2 px-3 py-3 text-left backdrop-blur-[5px]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0b]",
               active
-                ? "border-ember/90 bg-ember/15 text-bone shadow-[inset_0_0_0_1px_rgba(255,138,76,0.4)]"
-                : "border-bone/10 bg-ink-2/40 text-bone/75 hover:border-bone/30 hover:bg-ink-2/60 hover:text-bone",
+                ? "border-ember bg-[#161618]/60 text-bone glow-ember"
+                : "border-[#262626] bg-[#161618]/50 text-bone/75 hover:border-[#404040] hover:bg-[#161618]/70 hover:text-bone",
               disabled ? "opacity-50 cursor-not-allowed" : "",
             ].join(" ")}
           >

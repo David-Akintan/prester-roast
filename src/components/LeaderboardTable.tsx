@@ -17,14 +17,14 @@ export function LeaderboardTable({
 }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-2xl border border-bone/10 bg-ink-2/40 p-8 text-center text-sm text-bone/55 font-mono">
+      <div className="rounded-none border-2 border-[#262626] bg-[#161618] p-8 text-center text-sm text-bone/55 font-mono">
         No roasts yet. <span className="text-bone/85">First on the wall is forever.</span>
       </div>
     );
   }
 
   return (
-    <ol className="rounded-2xl border border-bone/10 bg-ink-2/40 divide-y divide-bone/[0.06] overflow-hidden">
+    <ol className="rounded-none border-2 border-[#262626] bg-[#161618] divide-y-2 divide-[#262626] overflow-hidden">
       {rows.map((row, i) => {
         const isMe = highlight && row.wallet.toLowerCase() === highlight.toLowerCase();
         return (
@@ -32,7 +32,7 @@ export function LeaderboardTable({
             key={row.wallet}
             className={[
               "flex items-center justify-between px-4 py-3 text-sm font-mono transition-colors",
-              isMe ? "bg-ember/[0.08]" : "hover:bg-bone/[0.03]",
+              isMe ? "bg-ember/[0.12] border-l-2 border-l-ember" : "hover:bg-ember/[0.06]",
             ].join(" ")}
           >
             <div className="flex items-center gap-3 min-w-0">

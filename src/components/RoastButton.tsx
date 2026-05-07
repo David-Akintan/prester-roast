@@ -197,13 +197,11 @@ export function RoastButton({
         onClick={handleClick}
         disabled={Boolean(disabled) || busy || !address}
         className={[
-          "w-full min-h-[56px] rounded-2xl px-5 py-3 font-display text-lg",
-          "transition-all duration-150 active:translate-y-px",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-ink",
-          "shadow-[0_8px_24px_-12px_rgba(255,138,76,0.4)]",
+          "lift w-full min-h-[56px] rounded-none px-5 py-3 font-display text-lg border-2",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0b]",
           isFree
-            ? "bg-ember text-ink hover:bg-ember/90"
-            : "bg-bone text-ink hover:bg-bone/90 hover:shadow-[0_10px_28px_-10px_rgba(245,239,231,0.3)]",
+            ? "border-ember bg-gradient-to-b from-ember to-ember-deep text-ink hover:from-[#ff7355] hover:to-ember shadow-[0_8px_24px_-4px_rgba(255,87,51,0.5)]"
+            : "border-bone bg-gradient-to-b from-bone to-[#d6cfc3] text-ink hover:from-white hover:to-bone shadow-[0_8px_24px_-4px_rgba(245,239,231,0.25)]",
           "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
         ].join(" ")}
       >
@@ -214,7 +212,7 @@ export function RoastButton({
       </button>
       {phase === "error" && errMsg && (
         <p
-          className="text-sm text-red-300/90 font-mono leading-snug px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/5 whitespace-pre-line"
+          className="text-sm text-red-300 font-mono leading-snug px-3 py-2 rounded-none border-2 border-red-500/60 bg-red-500/10 whitespace-pre-line"
           role="alert"
         >
           {errMsg}

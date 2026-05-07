@@ -59,9 +59,9 @@ export default async function OG({ params }: { params: { id: string } }) {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "64px",
-          backgroundColor: "#0a0a0a",
+          backgroundColor: "#0a0a0b",
           backgroundImage:
-            "radial-gradient(circle at 80% 20%, rgba(255,138,76,0.18), transparent 50%)",
+            "radial-gradient(circle at 80% 20%, rgba(255,87,51,0.18), transparent 50%)",
           color: "#f5efe7",
           fontFamily: "Georgia, serif",
         }}

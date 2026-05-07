@@ -21,10 +21,10 @@ const Tile = ({
 }) => (
   <div
     className={[
-      "rounded-2xl border p-4 transition-colors",
+      "lift rounded-none border-2 p-4",
       accent
-        ? "border-ember/30 bg-ember/[0.06]"
-        : "border-bone/10 bg-ink-2/40 hover:bg-ink-2/60",
+        ? "border-ember bg-gradient-to-br from-[#1a0e0a] to-[#161618] glow-ember"
+        : "border-[#262626] bg-[#161618] hover:border-[#404040]",
     ].join(" ")}
   >
     <div className="text-[10px] uppercase tracking-[0.22em] font-mono text-bone/50">

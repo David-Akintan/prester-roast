@@ -10,29 +10,29 @@ export function DailyTopicBanner({
   return (
     <div
       className={[
-        "relative rounded-2xl border px-4 py-3.5 overflow-hidden",
-        "transition-colors",
+        "lift relative rounded-none border-2 px-4 py-3.5 overflow-hidden",
+        "before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1",
         alreadyClaimed
-          ? "border-bone/10 bg-ink-2/40"
-          : "border-ember/30 bg-ember/[0.07]",
+          ? "border-[#262626] bg-[#161618] before:bg-[#404040]"
+          : "border-ember bg-gradient-to-r from-[#161618] via-[#1a0e0a] to-[#161618] before:bg-ember glow-ember",
       ].join(" ")}
     >
       {/* subtle decorative scribble in the corner */}
       <div
         aria-hidden
         className={[
-          "absolute -right-6 -top-6 size-24 rounded-full blur-2xl",
-          alreadyClaimed ? "bg-bone/[0.03]" : "bg-ember/15",
+          "absolute -right-6 -top-6 size-24 rounded-full blur-3xl",
+          alreadyClaimed ? "bg-bone/[0.03]" : "bg-ember/20",
         ].join(" ")}
       />
 
-      <div className="relative flex items-baseline justify-between gap-3">
-        <div className="text-[10px] uppercase tracking-[0.22em] font-mono">
-          <span className={alreadyClaimed ? "text-bone/45" : "text-ember/90"}>
-            Today's free roast
+      <div className="relative flex items-baseline justify-between gap-3 pl-2">
+        <div className="text-[10px] uppercase tracking-[0.25em] font-mono">
+          <span className={alreadyClaimed ? "text-bone/55" : "text-ember"}>
+            ▲ Today's free roast
           </span>
         </div>
-        <div className="text-[10px] uppercase tracking-[0.22em] font-mono">
+        <div className="text-[10px] uppercase tracking-[0.25em] font-mono">
           {alreadyClaimed ? (
             <span className="text-bone/45">✓ claimed</span>
           ) : (
@@ -41,7 +41,7 @@ export function DailyTopicBanner({
         </div>
       </div>
 
-      <p className="relative font-display italic text-xl leading-snug mt-1.5 text-bone">
+      <p className="relative font-display italic text-xl leading-snug mt-1.5 text-bone pl-2">
         {topic}
       </p>
     </div>
