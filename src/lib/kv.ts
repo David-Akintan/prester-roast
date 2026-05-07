@@ -162,5 +162,59 @@ export async function readStats(): Promise<StatsSnapshot> {
   };
 }
 
+// ── Roast of the Day — voter eligibility + day contribution ──────────
+//
+// Voter eligibility: a wallet may vote in the daily pot only if it has paid
+// for at least one roast in the last 7 days. We store a per-wallet flag with
+// a rolling 7-day TTL — every new paid roast refreshes it. The vote API just
+// checks existence.
+//
+// Day contribution: cumulative paid wei contributed by all roasts on a given
+// UTC day (unix-epoch days, matching RoastCourt's `lastFreeRoast` semantics).
+// Used by the settle cron to compute the 70/20/10 split.
+
+const ELIGIBILITY_TTL_SECONDS = 7 * 86_400;
+const DAY_CONTRIBUTION_TTL_SECONDS = 60 * 86_400; // keep ~2 months of history
+
+// Sentinel for the deepest block backfilled into the eligibility set —
+// the cron walks backward until this is older than `head - 7d`.
+export async function getEligibilityBackfilledThroughBlock(): Promise<bigint | null> {
+  const v = await kv.get<string>("eligibility:backfilledThroughBlock");
+  return v ? BigInt(v) : null;
+}
+
+export async function setEligibilityBackfilledThroughBlock(block: bigint): Promise<void> {
+  await kv.set("eligibility:backfilledThroughBlock", block.toString());
+}
+
+export function utcDayFromUnixSeconds(ts: number): number {
+  return Math.floor(ts / 86_400);
+}
+
+export async function markPaidRoaster(
+  wallet: string,
+  amountPaidWei: bigint,
+  unixSeconds: number,
+): Promise<void> {
+  if (amountPaidWei === 0n) return;
+  const utcDay = utcDayFromUnixSeconds(unixSeconds);
+  const pipe = kv.multi();
+  pipe.set(`eligibility:paid:${wallet.toLowerCase()}`, 1, { ex: ELIGIBILITY_TTL_SECONDS });
+  pipe.incrby(`dayContribution:${utcDay}`, amountPaidWei.toString() as unknown as number);
+  pipe.expire(`dayContribution:${utcDay}`, DAY_CONTRIBUTION_TTL_SECONDS);
+  await pipe.exec();
+}
+
+export async function isEligibleVoter(wallet: string): Promise<boolean> {
+  const v = await kv.get<number>(`eligibility:paid:${wallet.toLowerCase()}`);
+  return Boolean(v);
+}
+
+export async function getDayContributionWei(utcDay: number): Promise<bigint> {
+  const v = await kv.get<string | number>(`dayContribution:${utcDay}`);
+  if (v === null || v === undefined) return 0n;
+  return BigInt(v);
+}
+
 // Re-exported so API routes can use the raw client for ad-hoc reads.
 export { kv };

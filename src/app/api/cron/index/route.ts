@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createPublicClient, http, parseAbiItem } from "viem";
+import { createPublicClient, http, parseAbiItem, type PublicClient, type Transport } from "viem";
 import { celo } from "viem/chains";
 
 import { ROAST_COURT_ABI, ROAST_COURT_ADDRESS, CHAIN_ID } from "@/lib/contract";
@@ -9,6 +9,9 @@ import {
   recordVerdict,
   cidForHash,
   setCidForVerdictId,
+  markPaidRoaster,
+  getEligibilityBackfilledThroughBlock,
+  setEligibilityBackfilledThroughBlock,
   type VerdictFeedEntry,
 } from "@/lib/kv";
 import { PERSONAS, type Persona } from "@/lib/prompts";
@@ -27,6 +30,11 @@ const ROAST_ISSUED_EVENT = parseAbiItem(
 // Limit how far we scan in a single tick — Forno typically caps around
 // 5000-10000 blocks per getLogs call. We stay well below.
 const MAX_BLOCKS_PER_TICK = 2000n;
+
+// Roast-of-the-Day voter eligibility window: 7 days. Celo blocks every ~5s
+// → ~120,960 blocks. Round up to be safe; the backfill stops as soon as it
+// crosses the threshold.
+const ELIGIBILITY_WINDOW_BLOCKS = 130_000n;
 
 function authorize(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -92,24 +100,33 @@ export async function GET(req: Request) {
       // written by /api/roast at pin time.
       const cid = args.roastTextHash ? await cidForHash(args.roastTextHash) : null;
 
+      const amountPaid = args.amountPaid ?? 0n;
       const entry: VerdictFeedEntry = {
         id: args.id.toString(),
         user: args.user,
         persona: personaName,
-        amountPaid: (args.amountPaid ?? 0n).toString(),
+        amountPaid: amountPaid.toString(),
         txHash: log.transactionHash,
         blockNumber: Number(log.blockNumber),
         ts: Number(block.timestamp),
         roastTextHash: args.roastTextHash,
         cid,
       };
-      const isPaid = (args.amountPaid ?? 0n) > 0n;
+      const isPaid = amountPaid > 0n;
       await recordVerdict(entry, isPaid);
       if (cid) await setCidForVerdictId(args.id.toString(), cid);
+      // Roast of the Day eligibility — every paid event refreshes the wallet's
+      // 7-day voter flag and increments that day's contribution counter.
+      if (isPaid) await markPaidRoaster(args.user, amountPaid, Number(block.timestamp));
       recorded += 1;
     }
 
     await setLastIndexedBlock(toBlock);
+
+    // ── Backward backfill — seeds the 7-day eligibility set with paid events
+    //    from before the cron started running. Walks backward one chunk per
+    //    tick until it crosses `head - ELIGIBILITY_WINDOW_BLOCKS`, then stops.
+    const backfill = await runEligibilityBackfill(client, head);
 
     // Touch ABI ref to keep the import live (we may switch to it later)
     void ROAST_COURT_ABI;
@@ -119,10 +136,82 @@ export async function GET(req: Request) {
       fromBlock: fromBlock.toString(),
       toBlock: toBlock.toString(),
       recorded,
+      backfill,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("indexer error:", err);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
+}
+
+interface BackfillReport {
+  status: "complete" | "advanced" | "skipped";
+  fromBlock?: string;
+  toBlock?: string;
+  marked?: number;
+}
+
+/**
+ * Walks the RoastIssued event history backward, one chunk per cron tick,
+ * marking paid roasters into the 7-day eligibility set. Idempotent: marking
+ * the same wallet twice just refreshes its TTL.
+ *
+ * Stops when the cursor crosses `head - ELIGIBILITY_WINDOW_BLOCKS` — at that
+ * point the eligibility set already covers the full voting window, and any
+ * older history is irrelevant because the per-wallet flag has a 7-day TTL.
+ */
+type CeloPublicClient = PublicClient<Transport, typeof celo>;
+
+async function runEligibilityBackfill(
+  client: CeloPublicClient,
+  head: bigint,
+): Promise<BackfillReport> {
+  const cutoff = head > ELIGIBILITY_WINDOW_BLOCKS ? head - ELIGIBILITY_WINDOW_BLOCKS : 0n;
+  let cursor = await getEligibilityBackfilledThroughBlock();
+
+  // First-run init: anchor cursor at `head` so the first chunk covers the
+  // freshest blocks. Forward indexer also handles those, but doing it here
+  // means the eligibility set is populated even if the forward indexer is
+  // far behind on first deploy.
+  if (cursor === null) cursor = head;
+
+  if (cursor <= cutoff) {
+    return { status: "complete" };
+  }
+
+  const toBlock = cursor;
+  const fromBlock = toBlock > MAX_BLOCKS_PER_TICK ? toBlock - MAX_BLOCKS_PER_TICK : 0n;
+
+  if (fromBlock >= toBlock) {
+    await setEligibilityBackfilledThroughBlock(0n);
+    return { status: "complete" };
+  }
+
+  const logs = await client.getLogs({
+    address: ROAST_COURT_ADDRESS,
+    event: ROAST_ISSUED_EVENT,
+    fromBlock,
+    toBlock,
+  });
+
+  let marked = 0;
+  for (const log of logs) {
+    const args = log.args as { user?: `0x${string}`; amountPaid?: bigint };
+    if (!args.user) continue;
+    const amountPaid = args.amountPaid ?? 0n;
+    if (amountPaid === 0n) continue;
+    const block = await client.getBlock({ blockHash: log.blockHash });
+    await markPaidRoaster(args.user, amountPaid, Number(block.timestamp));
+    marked += 1;
+  }
+
+  await setEligibilityBackfilledThroughBlock(fromBlock);
+
+  return {
+    status: "advanced",
+    fromBlock: fromBlock.toString(),
+    toBlock: toBlock.toString(),
+    marked,
+  };
 }
