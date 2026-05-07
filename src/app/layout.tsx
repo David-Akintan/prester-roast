@@ -16,7 +16,8 @@ const jetbrains = JetBrains_Mono({
   weight: ["400", "500", "600"],
 });
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://prester-roast.vercel.app";
+const appUrl =
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://prester-roast.vercel.app";
 
 export const metadata: Metadata = {
   title: {
@@ -45,6 +46,10 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/icon-512.png",
   },
+  other: {
+    "talentapp:project_verification":
+      "96ccbe6c0f9f2559d53fb850630b0921459dc68d9e194ea55472baaa7e287feace39913d0247afd72068d9a4205e8b1da68735345909a2125d8138adfa33fed4",
+  },
 };
 
 export const viewport: Viewport = {
@@ -54,7 +59,11 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className={`${playfair.variable} ${jetbrains.variable}`}>
       <body className="bg-ink text-bone antialiased">
