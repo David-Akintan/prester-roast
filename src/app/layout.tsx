@@ -1,13 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
-const playfair = Playfair_Display({
+const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["700"],
+  axes: ["opsz", "SOFT"],
   style: ["normal", "italic"],
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-body",
+  weight: ["400", "500", "600"],
 });
 
 const jetbrains = JetBrains_Mono({
@@ -65,8 +71,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${jetbrains.variable}`}>
-      <body className="bg-ink text-bone antialiased">
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${jetbrains.variable}`}>
+      <body className="bg-bg text-text-primary antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

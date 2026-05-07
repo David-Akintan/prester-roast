@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAccount, useWriteContract } from "wagmi";
+import { useAccount, useConnect, useWriteContract } from "wagmi";
 import { getPublicClient, readContract } from "@wagmi/core";
 import { decodeEventLog, type TransactionReceipt } from "viem";
 
@@ -17,6 +17,7 @@ import {
 import { config as wagmiConfig } from "@/lib/wagmi";
 import { getFeeCurrency } from "@/lib/minipay";
 import { formatPriceLabel } from "@/lib/format";
+import { CourtroomOverlay, type OverlayPhase } from "@/components/CourtroomOverlay";
 
 type Phase = "idle" | "judging" | "approving" | "roasting" | "done" | "error";
 
@@ -54,6 +55,7 @@ export function RoastButton({
   onError?: (msg: string) => void;
 }) {
   const { address } = useAccount();
+  const { connectors, connect, isPending: connectPending } = useConnect();
   const [phase, setPhase] = useState<Phase>("idle");
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const { writeContractAsync } = useWriteContract();
@@ -67,14 +69,20 @@ export function RoastButton({
     [onError],
   );
 
+  const connectWallet = useCallback(() => {
+    const injected = connectors.find((c) => c.id === "injected");
+    const target = injected ?? connectors[0];
+    if (!target) return fail("No wallet connector available.");
+    connect({ connector: target });
+  }, [connect, connectors, fail]);
+
   const handleClick = useCallback(async () => {
-    if (!address) return fail("Connect a wallet first.");
+    if (!address) return connectWallet();
     if (disabled) return;
 
     setErrMsg(null);
     setPhase("judging");
 
-    // 1. Judge call: get verdict text + judge signature
     let api: RoastApiResponse;
     try {
       const res = await fetch("/api/roast", {
@@ -84,9 +92,6 @@ export function RoastButton({
       });
       const json = await res.json();
       if (!res.ok) {
-        // /api/roast returns { error, attempts? } when judges fail.
-        // Surface the per-provider error class so users (and us during demo)
-        // get actionable info instead of "Judge offline".
         const attempts = json.attempts as Array<{ provider: string; error: string }> | undefined;
         const detail = attempts?.length
           ? `\n${attempts.map((a) => `· ${a.provider}: ${a.error}`).join("\n")}`
@@ -104,7 +109,6 @@ export function RoastButton({
     const feeCurrency = getFeeCurrency();
 
     try {
-      // 2. (Paid) approve cUSD if allowance is short
       if (!isFree) {
         const allowance = (await readContract(wagmiConfig, {
           address: CUSD_ADDRESS,
@@ -126,7 +130,6 @@ export function RoastButton({
         }
       }
 
-      // 3. Issue or claim — both same shape
       setPhase("roasting");
       const fnName = isFree ? "claimFreeRoast" : "issueVerdict";
       const txHash = await writeContractAsync({
@@ -139,7 +142,6 @@ export function RoastButton({
 
       const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-      // 4. Pull verdict id from RoastIssued event
       let verdictId: bigint | null = null;
       for (const log of receipt.logs) {
         try {
@@ -169,55 +171,51 @@ export function RoastButton({
             : "Transaction failed.";
       fail(msg);
     }
-  }, [address, disabled, fail, isFree, onSuccess, persona, userInput, writeContractAsync]);
+  }, [address, connectWallet, disabled, fail, isFree, onSuccess, persona, userInput, writeContractAsync]);
 
-  const label = (() => {
-    switch (phase) {
-      case "judging":
-        return "Summoning the judge…";
-      case "approving":
-        return "Approving cUSD…";
-      case "roasting":
-        return "Sealing verdict onchain…";
-      case "done":
-        return "Verdict in — opening…";
-      case "error":
-        return "Try again";
-      default:
-        return isFree ? "Claim free roast" : `Get roasted · ${formatPriceLabel(ROAST_PRICE_WEI)}`;
-    }
-  })();
+  const idleLabel = !address
+    ? "SIGN TO ENTER COURT"
+    : isFree
+      ? "CLAIM FREE VERDICT"
+      : `SUBMIT EVIDENCE (${formatPriceLabel(ROAST_PRICE_WEI)})`;
 
+  const label = phase === "error" ? "TRY AGAIN" : idleLabel;
   const busy = phase !== "idle" && phase !== "error";
+  const overlayPhase: OverlayPhase | null = busy ? (phase as OverlayPhase) : null;
+
+  // Button is only disabled by upstream rules (input length / free claimed) when
+  // a wallet IS connected. When no address, the button is always live so it can
+  // trigger the connect flow.
+  const buttonDisabled =
+    busy || connectPending || (Boolean(address) && Boolean(disabled));
 
   return (
     <div className="space-y-2">
       <button
         type="button"
         onClick={handleClick}
-        disabled={Boolean(disabled) || busy || !address}
+        disabled={buttonDisabled}
         className={[
-          "lift w-full min-h-[56px] rounded-none px-5 py-3 font-display text-lg border-2",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0b]",
-          isFree
-            ? "border-ember bg-gradient-to-b from-ember to-ember-deep text-ink hover:from-[#ff7355] hover:to-ember shadow-[0_8px_24px_-4px_rgba(255,87,51,0.5)]"
-            : "border-bone bg-gradient-to-b from-bone to-[#d6cfc3] text-ink hover:from-white hover:to-bone shadow-[0_8px_24px_-4px_rgba(245,239,231,0.25)]",
-          "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
+          "depress w-full min-h-[56px] rounded-none px-5 py-3 font-display text-lg uppercase tracking-[0.08em]",
+          "border bg-[var(--color-judge,var(--color-accent-brutal))] text-[var(--color-bg)]",
+          "border-[var(--color-judge-deep,#c8341a)]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-judge,var(--color-accent-brutal))] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
         ].join(" ")}
       >
         <span className="inline-flex items-center justify-center gap-2.5">
-          {busy && <span className="spinner" aria-hidden />}
           <span>{label}</span>
         </span>
       </button>
       {phase === "error" && errMsg && (
         <p
-          className="text-sm text-red-300 font-mono leading-snug px-3 py-2 rounded-none border-2 border-red-500/60 bg-red-500/10 whitespace-pre-line"
+          className="text-sm text-red-300 font-mono leading-snug px-3 py-2 rounded-none border border-red-500/60 bg-red-500/10 whitespace-pre-line"
           role="alert"
         >
           {errMsg}
         </p>
       )}
+      <CourtroomOverlay phase={overlayPhase} />
     </div>
   );
 }

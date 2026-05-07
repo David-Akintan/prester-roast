@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAccount, useReadContract } from "wagmi";
 
 import { PersonaPicker } from "@/components/PersonaPicker";
-import { DailyTopicBanner } from "@/components/DailyTopicBanner";
+import { Docket } from "@/components/Docket";
 import { StreakBadge } from "@/components/StreakBadge";
 import { OpenInMiniPayButton } from "@/components/OpenInMiniPayButton";
 import { ConnectWallet } from "@/components/ConnectWallet";
@@ -15,10 +15,12 @@ import { RoastButton, type RoastSuccess } from "@/components/RoastButton";
 import { ROAST_COURT_ABI, ROAST_COURT_ADDRESS } from "@/lib/contract";
 import { utcDayIndex, type DailyTopic } from "@/lib/topics";
 import { type Persona } from "@/lib/prompts";
+import { PERSONA_ACCENT, PERSONA_ACCENT_DEEP } from "@/lib/persona-theme";
 import { truncateAddress } from "@/lib/format";
 
 const MIN_CHARS = 10;
 const MAX_CHARS = 280;
+const RED_AT = 250;
 
 export default function Home() {
   const router = useRouter();
@@ -30,7 +32,6 @@ export default function Home() {
   const [topic, setTopic] = useState<DailyTopic | null>(null);
   const [topErr, setTopErr] = useState<string | null>(null);
 
-  // Fetch today's topic from /api/roast (cached 60s)
   useEffect(() => {
     let cancelled = false;
     fetch("/api/roast")
@@ -46,7 +47,6 @@ export default function Home() {
     };
   }, []);
 
-  // Read lastFreeRoast for the connected wallet to know if free is claimable today
   const { data: lastFree } = useReadContract({
     address: ROAST_COURT_ADDRESS,
     abi: ROAST_COURT_ABI,
@@ -72,17 +72,30 @@ export default function Home() {
     router.push(`/verdict/${verdictId.toString()}`);
   };
 
+  const charOver = input.length > RED_AT;
+
   return (
-    <main className="mx-auto max-w-md px-4 py-6 sm:py-10 space-y-6 fade-in-up">
+    <main
+      className="mx-auto max-w-md px-4 py-6 sm:py-10 space-y-6 fade-in-up"
+      style={{
+        ["--color-judge" as string]: PERSONA_ACCENT[persona],
+        ["--color-judge-deep" as string]: PERSONA_ACCENT_DEEP[persona],
+      }}
+    >
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
-            <span aria-hidden className="text-ember/90 text-xl leading-none">⚖</span>
-            <h1 className="font-display text-3xl tracking-tight leading-none">
+            <span aria-hidden className="text-[var(--color-text-primary)] text-xl leading-none">⚖</span>
+            <h1
+              className={[
+                "font-display text-3xl tracking-tight leading-none text-[var(--color-text-primary)]",
+                persona === "brutal" ? "glitch" : "",
+              ].join(" ")}
+            >
               Roast Court
             </h1>
           </div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-bone/55 mt-2">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mt-2">
             AI judge · onchain · 10¢
           </p>
         </div>
@@ -94,24 +107,21 @@ export default function Home() {
       </header>
 
       {topic ? (
-        <DailyTopicBanner
-          topic={topic.topic}
-          alreadyClaimed={freeClaimedToday}
-        />
+        <Docket topic={topic.topic} alreadyClaimed={freeClaimedToday} />
       ) : topErr ? (
-        <p className="text-xs font-mono text-red-300 px-3 py-2 rounded-none border-2 border-red-500/60 bg-red-500/10">
+        <p className="text-xs font-mono text-red-300 px-3 py-2 rounded-none border border-red-500/60 bg-red-500/10">
           Daily topic unavailable: {topErr}
         </p>
       ) : (
         <div
           aria-hidden
-          className="h-[68px] rounded-none border-2 border-[#262626] bg-[#161618] animate-pulse"
+          className="h-[68px] rounded-none border border-[var(--color-surface-2)] bg-[var(--color-surface-1)] animate-pulse"
         />
       )}
 
       <section className="space-y-3">
-        <label className="block text-[11px] uppercase tracking-[0.2em] font-mono text-bone/55">
-          Choose a judge
+        <label className="block text-[11px] uppercase tracking-[0.2em] font-mono text-[var(--color-text-secondary)]">
+          The Bench
         </label>
         <PersonaPicker value={persona} onChange={setPersona} />
       </section>
@@ -120,13 +130,18 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <label
             htmlFor="roast-input"
-            className="block text-[11px] uppercase tracking-[0.2em] font-mono text-bone/55"
+            className="block text-[11px] uppercase tracking-[0.2em] font-mono text-[var(--color-text-secondary)]"
           >
-            {mode === "free"
-              ? "Your take on the topic"
-              : "What should we roast?"}
+            Evidence
           </label>
-          <span className="text-[11px] font-mono text-bone/40">
+          <span
+            className="text-[11px] font-mono"
+            style={{
+              color: charOver
+                ? "var(--color-accent-brutal)"
+                : "var(--color-text-secondary)",
+            }}
+          >
             {input.length}/{MAX_CHARS}
           </span>
         </div>
@@ -137,26 +152,25 @@ export default function Home() {
           placeholder={
             mode === "free"
               ? "Reply to today's topic — keep it under 280 chars."
-              : "Your startup, your tweet, your CV, your code, your hot take. Whatever's brave enough."
+              : "Submit your evidence. Tweet, code, CV, hot take — whatever you want judged."
           }
           rows={4}
-          className="w-full resize-none rounded-none border-2 border-[#262626] bg-[#161618] px-4 py-3 font-mono text-sm leading-relaxed text-bone placeholder:text-bone/30 focus:outline-none focus:border-ember focus:ring-2 focus:ring-ember/40 transition-all"
+          className="evidence-inset w-full resize-none rounded-none border border-[var(--color-surface-2)] bg-[var(--color-surface-1)] px-4 py-3 font-mono text-sm leading-relaxed text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]/60 focus:outline-none focus:border-[var(--color-judge)] focus:ring-2 focus:ring-[var(--color-judge)]/40 transition-all"
         />
       </section>
 
-      {/* Mode toggle — only show free option if topic loaded and not claimed */}
-      <div className="flex gap-0 rounded-none bg-[#161618] border-2 border-[#262626] text-sm font-mono">
+      <div className="flex gap-0 rounded-none bg-[var(--color-surface-1)] border border-[var(--color-surface-2)] text-sm font-mono">
         <button
           type="button"
           onClick={() => setMode("paid")}
           className={[
-            "flex-1 min-h-[40px] rounded-none px-3 uppercase tracking-[0.15em] transition-all border-r-2 border-[#262626]",
+            "flex-1 min-h-[40px] rounded-none px-3 uppercase tracking-[0.15em] transition-all border-r border-[var(--color-surface-2)]",
             mode === "paid"
-              ? "bg-bone text-ink"
-              : "text-bone/65 hover:text-bone hover:bg-bone/5",
+              ? "bg-[var(--color-judge)] text-[var(--color-bg)]"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]",
           ].join(" ")}
         >
-          Paid · 10¢
+          Paid Docket
         </button>
         <button
           type="button"
@@ -165,12 +179,12 @@ export default function Home() {
           className={[
             "flex-1 min-h-[40px] rounded-none px-3 uppercase tracking-[0.15em] transition-all",
             mode === "free"
-              ? "bg-ember text-ink"
-              : "text-bone/65 hover:text-bone hover:bg-bone/5",
+              ? "bg-[var(--color-judge)] text-[var(--color-bg)]"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]",
             freeClaimedToday || !topic ? "opacity-40 cursor-not-allowed" : "",
           ].join(" ")}
         >
-          Free daily {freeClaimedToday ? "✓" : ""}
+          Pro Bono 1×/day {freeClaimedToday ? "✓" : ""}
         </button>
       </div>
 
@@ -184,25 +198,20 @@ export default function Home() {
         onSuccess={handleSuccess}
       />
 
-      {!isConnected && (
-        <p className="text-center text-xs font-mono text-bone/50">
-          Connect a wallet to play — Connect button is in the header. Inside MiniPay this happens automatically.
-        </p>
-      )}
       {isConnected && address && (
-        <p className="text-center text-xs font-mono text-bone/50">
+        <p className="text-center text-xs font-mono text-[var(--color-text-secondary)]">
           signed in as {truncateAddress(address)}
         </p>
       )}
 
-      <footer className="pt-6 border-t-2 border-[#262626] text-center text-[11px] font-mono text-bone/40 space-x-3 uppercase tracking-[0.15em]">
-        <Link href="/stats" className="hover:text-bone/70 transition">
+      <footer className="pt-6 border-t border-[var(--color-surface-2)] text-center text-[11px] font-mono text-[var(--color-text-secondary)] space-x-3 uppercase tracking-[0.15em]">
+        <Link href="/stats" className="hover:text-[var(--color-text-primary)] transition">
           /stats
         </Link>
-        <Link href="/leaderboard" className="hover:text-bone/70 transition">
+        <Link href="/leaderboard" className="hover:text-[var(--color-text-primary)] transition">
           /leaderboard
         </Link>
-        <Link href="/about" className="hover:text-bone/70 transition">
+        <Link href="/about" className="hover:text-[var(--color-text-primary)] transition">
           /about
         </Link>
       </footer>
