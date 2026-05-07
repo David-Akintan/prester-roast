@@ -4,6 +4,7 @@ import { isAddress, getAddress } from "viem";
 
 import { moderate } from "@/lib/moderation";
 import { generateRoast } from "@/lib/judge";
+import { AllJudgesExhaustedError } from "@/lib/judges/types";
 import { signVerdict, hashUtf8 } from "@/lib/signer";
 import { pinVerdict } from "@/lib/ipfs";
 import { isPersona, type Persona } from "@/lib/prompts";
@@ -138,6 +139,19 @@ export async function POST(req: Request) {
       dailyTopic: isFree ? today.topic : null,
     });
   } catch (err) {
+    // Surface per-provider failure breakdown so the client can debug from
+    // DevTools without diving into Vercel function logs every time.
+    if (err instanceof AllJudgesExhaustedError) {
+      console.error("/api/roast — all judges failed:", err.attempts);
+      return NextResponse.json(
+        {
+          error:
+            "All judge providers failed. Check the `attempts` array for per-provider details.",
+          attempts: err.attempts,
+        },
+        { status: 503 },
+      );
+    }
     const msg = err instanceof Error ? err.message : "internal error";
     console.error("/api/roast error:", err);
     return NextResponse.json({ error: msg }, { status: 500 });

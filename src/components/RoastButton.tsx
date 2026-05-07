@@ -83,7 +83,16 @@ export function RoastButton({
         body: JSON.stringify({ wallet: address, persona, userInput, isFree }),
       });
       const json = await res.json();
-      if (!res.ok) return fail(json.error ?? `Judge offline (${res.status})`);
+      if (!res.ok) {
+        // /api/roast returns { error, attempts? } when judges fail.
+        // Surface the per-provider error class so users (and us during demo)
+        // get actionable info instead of "Judge offline".
+        const attempts = json.attempts as Array<{ provider: string; error: string }> | undefined;
+        const detail = attempts?.length
+          ? `\n${attempts.map((a) => `· ${a.provider}: ${a.error}`).join("\n")}`
+          : "";
+        return fail(`${json.error ?? `Judge offline (${res.status})`}${detail}`);
+      }
       api = json as RoastApiResponse;
     } catch (e) {
       return fail(e instanceof Error ? e.message : "Network error reaching judge.");
@@ -205,7 +214,7 @@ export function RoastButton({
       </button>
       {phase === "error" && errMsg && (
         <p
-          className="text-sm text-red-300/90 font-mono leading-snug px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/5"
+          className="text-sm text-red-300/90 font-mono leading-snug px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/5 whitespace-pre-line"
           role="alert"
         >
           {errMsg}
