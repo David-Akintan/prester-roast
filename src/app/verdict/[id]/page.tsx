@@ -26,31 +26,40 @@ interface OnchainVerdict {
   isFree: boolean;
 }
 
+// Forno is load-balanced; the node serving this SSR read may lag a block or
+// two behind the node the user's wallet submitted to. Retry briefly so the
+// post-claim redirect doesn't 404 on a freshly-issued verdict id.
+const READ_BACKOFF_MS = [0, 350, 700, 1200, 1800];
+
 async function readOnchainVerdict(id: bigint): Promise<OnchainVerdict | null> {
   const client = createPublicClient({ chain: celo, transport: http(RPC_URL) });
-  try {
-    const result = (await client.readContract({
-      address: ROAST_COURT_ADDRESS,
-      abi: ROAST_COURT_ABI,
-      functionName: "verdicts",
-      args: [id],
-    })) as readonly [`0x${string}`, bigint, `0x${string}`, `0x${string}`, number, bigint];
+  for (const delay of READ_BACKOFF_MS) {
+    if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+    try {
+      const result = (await client.readContract({
+        address: ROAST_COURT_ADDRESS,
+        abi: ROAST_COURT_ABI,
+        functionName: "verdicts",
+        args: [id],
+      })) as readonly [`0x${string}`, bigint, `0x${string}`, `0x${string}`, number, bigint];
 
-    const [user, amountPaid, roastTextHash, inputHash, personaIdx, timestamp] = result;
-    if (user === "0x0000000000000000000000000000000000000000") return null;
+      const [user, amountPaid, roastTextHash, inputHash, personaIdx, timestamp] = result;
+      if (user === "0x0000000000000000000000000000000000000000") continue;
 
-    return {
-      user,
-      amountPaid,
-      roastTextHash,
-      inputHash,
-      persona: PERSONAS[personaIdx] ?? "brutal",
-      timestamp: Number(timestamp),
-      isFree: amountPaid === 0n,
-    };
-  } catch {
-    return null;
+      return {
+        user,
+        amountPaid,
+        roastTextHash,
+        inputHash,
+        persona: PERSONAS[personaIdx] ?? "brutal",
+        timestamp: Number(timestamp),
+        isFree: amountPaid === 0n,
+      };
+    } catch {
+      // transient RPC error — retry
+    }
   }
+  return null;
 }
 
 // Find the indexer-cached entry (so we can show tx hash + cid quickly)
@@ -96,7 +105,7 @@ export default async function VerdictPage({ params }: { params: { id: string } }
   if (id === null) notFound();
 
   const onchain = await readOnchainVerdict(id);
-  if (!onchain) notFound();
+  if (!onchain) return <VerdictPending id={id} />;
 
   // The roast TEXT lives on IPFS — try to load. If unavailable we render a
   // degraded card with just hashes (the verdict still proves a roast was issued).
@@ -158,6 +167,37 @@ export default async function VerdictPage({ params }: { params: { id: string } }
       >
         Get your own roast
       </Link>
+    </main>
+  );
+}
+
+// Shown when the SSR read couldn't see the verdict yet (Forno propagation lag
+// after a fresh claim). Auto-refreshes so the user lands on the real page
+// without having to manually reload.
+function VerdictPending({ id }: { id: bigint }) {
+  return (
+    <main className="mx-auto max-w-xl px-4 py-10 space-y-6">
+      <meta httpEquiv="refresh" content="3" />
+      <header>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-[0.2em] text-bone/55 hover:text-bone transition-colors"
+        >
+          ← Roast Court
+        </Link>
+      </header>
+      <section className="rounded-none border-2 border-[#262626] bg-[#0f0f10] p-6 text-center space-y-3">
+        <p className="font-display text-2xl leading-tight">
+          Verdict {formatVerdictId(id)} is being indexed
+        </p>
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-bone/60">
+          Waiting for the node to catch up · auto-refreshing
+        </p>
+        <div
+          aria-hidden
+          className="mx-auto mt-2 h-1 w-24 animate-pulse bg-ember/70"
+        />
+      </section>
     </main>
   );
 }

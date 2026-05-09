@@ -1,4 +1,4 @@
-import { createConfig, http } from "wagmi";
+import { createConfig, createStorage, http } from "wagmi";
 import { celo } from "wagmi/chains";
 import { injected, walletConnect } from "wagmi/connectors";
 
@@ -27,11 +27,20 @@ const connectors = [
     : []),
 ];
 
+// Explicit storage so reconnect() in providers.tsx has a deterministic place
+// to read the last-used connector from after a refresh. Default would also
+// work, but with ssr: true it's worth being explicit about which side persists.
+const storage =
+  typeof window !== "undefined"
+    ? createStorage({ storage: window.localStorage, key: "roast-court.wagmi" })
+    : undefined;
+
 export const config = createConfig({
   chains: [celo],
   connectors,
   transports: { [celo.id]: http(RPC_URL) },
   ssr: true,
+  storage,
 });
 
 declare module "wagmi" {
