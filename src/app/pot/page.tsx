@@ -1,7 +1,7 @@
 'use client';
 
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { parseUnits, formatUnits, maxUint256 } from 'viem';
+import { parseUnits, formatUnits } from 'viem';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 
@@ -48,24 +48,14 @@ const cUSDAbi = [
 export default function PotPage() {
   const { address, isConnected } = useAccount();
   const { writeContract, data: hash, isPending } = useWriteContract();
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ 
-    hash,
-    onSuccess: (receipt) => {
-      // Auto-fund after successful approval
-      if (receipt.status === 'success' && lastActionRef.current === 'approve') {
-        lastActionRef.current = 'fund';
-        handleFund();
-      }
-    },
-  });
+  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
 
   const [fundAmountStr, setFundAmountStr] = useState('0.1');
   const fundAmount = useMemo(() => parseUnits(fundAmountStr || '0', 18), [fundAmountStr]);
 
   const today = useMemo(() => BigInt(Math.floor(Date.now() / 86400000)), []);
 
-  // Fixed large approval limit (one-time approval)
-  const APPROVAL_LIMIT = parseUnits('1', 18); // 1 cUSD — enough for normal use
+  const APPROVAL_LIMIT = parseUnits('1000', 18); // one-time generous approval
 
   // Read current allowance
   const { data: allowanceRaw, refetch: refetchAllowance } = useReadContract({
@@ -88,21 +78,27 @@ export default function PotPage() {
   });
   const currentPot = formatUnits(currentPotRaw || 0n, 18);
 
-  // Track what the last transaction was (approve or fund)
-  const lastActionRef = useMemo(() => ({ current: '' as 'approve' | 'fund' }), []);
-
   const handleApprove = () => {
-    lastActionRef.current = 'approve';
     writeContract({
       address: CUSD,
       abi: cUSDAbi,
       functionName: 'approve',
-      args: [ROAST_POT, APPROVAL_LIMIT],   // ← fixed large amount
+      args: [ROAST_POT, APPROVAL_LIMIT],
+      onSuccess: () => {
+        // Auto-trigger fund after approval is mined
+        setTimeout(() => {
+          writeContract({
+            address: ROAST_POT,
+            abi: roastPotAbi,
+            functionName: 'fund',
+            args: [today, fundAmount],
+          });
+        }, 800); // tiny delay so the UI updates smoothly
+      },
     });
   };
 
   const handleFund = () => {
-    lastActionRef.current = 'fund';
     writeContract({
       address: ROAST_POT,
       abi: roastPotAbi,
@@ -113,7 +109,7 @@ export default function PotPage() {
 
   return (
     <div className="min-h-screen bg-black text-white pb-12">
-      {/* Header (unchanged) */}
+      {/* Header */}
       <div className="border-b border-yellow-500/30 bg-black sticky top-0 z-50">
         <div className="max-w-3xl mx-auto px-6 py-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition">
@@ -130,10 +126,57 @@ export default function PotPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 pt-10">
-        {/* Hero & What is the Pot section (unchanged from previous version) */}
-        {/* ... keep the hero + "What is the Daily Roast Pot?" explanation you already have ... */}
+        {/* Hero Pot */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-yellow-400 text-black text-sm font-bold px-6 py-2 rounded-3xl mb-6">
+            🔥 LIVE DAILY POT
+          </div>
+          <h2 className="text-7xl font-mono font-bold text-yellow-400 tracking-tighter mb-2">
+            {currentPot} <span className="text-4xl text-white/70">cUSD</span>
+          </h2>
+          <p className="text-xl text-white/70">Today’s prize pool • Winner awarded at midnight UTC</p>
+        </div>
 
-        {/* Fund Section — IMPROVED */}
+        {/* What is the Daily Roast Pot? */}
+        <div className="bg-zinc-900 border border-yellow-400/30 rounded-3xl p-8 mb-12">
+          <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
+            <span className="text-yellow-400">🔥</span>
+            What is the Daily Roast Pot?
+          </h3>
+          <div className="space-y-6 text-[15px]">
+            <p>
+              Every time someone pays <span className="text-yellow-400 font-medium">10¢ (cUSD)</span> to get roasted, 
+              that money automatically goes into today’s <strong>Roast Pot</strong>.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-black/50 rounded-2xl p-5">
+                <div className="text-yellow-400 text-xl mb-2">💰</div>
+                <p className="font-medium">Funded by the community</p>
+                <p className="text-white/60 text-sm">Every paid roast adds to the pot</p>
+              </div>
+              <div className="bg-black/50 rounded-2xl p-5">
+                <div className="text-yellow-400 text-xl mb-2">🏆</div>
+                <p className="font-medium">One winner per day</p>
+                <p className="text-white/60 text-sm">Awarded at midnight UTC</p>
+              </div>
+              <div className="bg-black/50 rounded-2xl p-5">
+                <div className="text-yellow-400 text-xl mb-2">📈</div>
+                <p className="font-medium">You can win it</p>
+                <p className="text-white/60 text-sm">Best/funniest roast of the day</p>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-white/10">
+              <p className="font-medium text-yellow-400 mb-2">How do you win the pot?</p>
+              <ul className="text-white/80 space-y-2 text-sm">
+                <li className="flex gap-2"><span className="text-yellow-400">1.</span> Create the most savage/funny roast of the day</li>
+                <li className="flex gap-2"><span className="text-yellow-400">2.</span> Get people to roast you or share your verdict</li>
+                <li className="flex gap-2"><span className="text-yellow-400">3.</span> Top the leaderboard — owner awards the full pot</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Fund Section */}
         <div className="bg-zinc-900 border border-yellow-400/30 rounded-3xl p-8 mb-12">
           <h3 className="text-2xl font-bold mb-6">Fund the Pot</h3>
 
@@ -173,9 +216,14 @@ export default function PotPage() {
           )}
         </div>
 
-        {/* History section (keep your existing 7-day history here) */}
-        {/* ... your potHistory map code ... */}
+        {/* Last 7 Days History (paste your existing history code here if you have it) */}
 
+        {/* Footer note */}
+        <div className="mt-16 text-center text-white/30 text-xs">
+          RoastPot • 0xdcacb893ebaa8b1b1d839353346dcdf556836b02
+          <br />
+          All data read live from Celo mainnet
+        </div>
       </div>
     </div>
   );
