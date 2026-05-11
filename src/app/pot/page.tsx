@@ -55,7 +55,7 @@ export default function PotPage() {
 
   const today = useMemo(() => BigInt(Math.floor(Date.now() / 86400000)), []);
 
-  // Read current allowance
+  // Read allowance
   const { data: allowanceRaw } = useReadContract({
     address: CUSD,
     abi: cUSDAbi,
@@ -67,7 +67,7 @@ export default function PotPage() {
   const allowance = allowanceRaw || 0n;
   const hasEnoughAllowance = allowance >= fundAmount;
 
-  // Current pot balance (for display)
+  // Current pot balance
   const { data: currentPotRaw } = useReadContract({
     address: ROAST_POT,
     abi: roastPotAbi,
@@ -81,7 +81,7 @@ export default function PotPage() {
       address: CUSD,
       abi: cUSDAbi,
       functionName: 'approve',
-      args: [ROAST_POT, fundAmount],   // approve exact amount (or you can approve a very large number)
+      args: [ROAST_POT, fundAmount],
     });
   };
 
@@ -96,7 +96,7 @@ export default function PotPage() {
 
   return (
     <div className="min-h-screen bg-black text-white pb-12">
-      {/* Header (same as before) */}
+      {/* Header */}
       <div className="border-b border-yellow-500/30 bg-black sticky top-0 z-50">
         <div className="max-w-3xl mx-auto px-6 py-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition">
@@ -106,14 +106,17 @@ export default function PotPage() {
               <p className="text-yellow-400 text-xs -mt-1">Daily Roast Pot</p>
             </div>
           </Link>
-          <Link href="/" className="text-sm font-medium px-6 py-3 bg-white text-black rounded-2xl hover:bg-yellow-400 transition">
+          <Link
+            href="/"
+            className="text-sm font-medium px-6 py-3 bg-white text-black rounded-2xl hover:bg-yellow-400 transition"
+          >
             ← Back to Court
           </Link>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-6 pt-10">
-        {/* Hero */}
+        {/* Hero Pot */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-yellow-400 text-black text-sm font-bold px-6 py-2 rounded-3xl mb-6">
             🔥 LIVE DAILY POT
@@ -124,8 +127,62 @@ export default function PotPage() {
           <p className="text-xl text-white/70">Today’s prize pool • Winner awarded at midnight UTC</p>
         </div>
 
+        {/* === NEW: What is the Pot + How to Win === */}
+        <div className="bg-zinc-900 border border-yellow-400/30 rounded-3xl p-8 mb-12">
+          <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
+            <span className="text-yellow-400">🔥</span>
+            What is the Daily Roast Pot?
+          </h3>
+          
+          <div className="space-y-6 text-[15px]">
+            <p>
+              Every time someone pays <span className="text-yellow-400 font-medium">10¢ (cUSD)</span> to get roasted, 
+              that money automatically goes into today’s <strong>Roast Pot</strong>.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-black/50 rounded-2xl p-5">
+                <div className="text-yellow-400 text-xl mb-2">💰</div>
+                <p className="font-medium">Funded by the community</p>
+                <p className="text-white/60 text-sm">Every paid roast adds to the pot</p>
+              </div>
+              <div className="bg-black/50 rounded-2xl p-5">
+                <div className="text-yellow-400 text-xl mb-2">🏆</div>
+                <p className="font-medium">One winner per day</p>
+                <p className="text-white/60 text-sm">Awarded at midnight UTC</p>
+              </div>
+              <div className="bg-black/50 rounded-2xl p-5">
+                <div className="text-yellow-400 text-xl mb-2">📈</div>
+                <p className="font-medium">You can win it</p>
+                <p className="text-white/60 text-sm">Best/funniest roast of the day</p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/10">
+              <p className="font-medium text-yellow-400 mb-2">How do you win the pot?</p>
+              <ul className="text-white/80 space-y-2 text-sm">
+                <li className="flex gap-2">
+                  <span className="text-yellow-400">1.</span>
+                  Create the most savage, funny, or viral roast of the day
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-yellow-400">2.</span>
+                  Get as many people as possible to roast you (or your verdict)
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-yellow-400">3.</span>
+                  Top the leaderboard — the judge (owner) awards the full pot to the winner
+                </li>
+              </ul>
+              <p className="text-xs text-white/40 mt-6">
+                Future updates: community voting + automatic onchain winner selection coming soon
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Fund Section */}
-        <div className="bg-zinc-900 border border-yellow-400/30 rounded-3xl p-8">
+        <div className="bg-zinc-900 border border-yellow-400/30 rounded-3xl p-8 mb-12">
           <h3 className="text-2xl font-bold mb-6">Fund the Pot</h3>
 
           {!isConnected ? (
@@ -162,6 +219,14 @@ export default function PotPage() {
               </p>
             </>
           )}
+        </div>
+
+        {/* History */}
+        <div>
+          <h3 className="text-xl font-bold mb-6 flex items-center justify-between">
+            Last 7 Days
+          </h3>
+          {/* ... keep your existing history code here (potHistory map) ... */}
         </div>
 
         {/* Footer note */}
