@@ -16,6 +16,7 @@ const roastPotAbi = [
 const cUSDAbi = [
   { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ type: 'address' }, { type: 'address' }], outputs: [{ type: 'uint256' }] },
   { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ type: 'address' }, { type: 'uint256' }], outputs: [{ type: 'bool' }] },
+  { name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ type: 'address' }], outputs: [{ type: 'uint256' }] },
 ] as const;
 
 export default function PotPage() {
@@ -30,26 +31,25 @@ export default function PotPage() {
 
   const APPROVAL_LIMIT = parseUnits('1000', 18);
 
-  // Read allowance
-  const { data: allowanceRaw, refetch: refetchAllowance } = useReadContract({
+  // Current REAL pot balance (cUSD balance in RoastPot)
+  const { data: realPotRaw } = useReadContract({
+    address: CUSD,
+    abi: cUSDAbi,
+    functionName: 'balanceOf',
+    args: [ROAST_POT],
+  });
+  const currentPot = formatUnits(realPotRaw || 0n, 18);
+
+  // Allowance
+  const { data: allowanceRaw } = useReadContract({
     address: CUSD,
     abi: cUSDAbi,
     functionName: 'allowance',
     args: address ? [address, ROAST_POT] : undefined,
     query: { enabled: !!address },
   });
-
   const allowance = allowanceRaw || 0n;
   const hasEnoughAllowance = allowance >= fundAmount;
-
-  // Current pot balance
-  const { data: currentPotRaw } = useReadContract({
-    address: ROAST_POT,
-    abi: roastPotAbi,
-    functionName: 'potByDay',
-    args: [today],
-  });
-  const currentPot = formatUnits(currentPotRaw || 0n, 18);
 
   const handleApprove = () => {
     writeContract({
@@ -163,3 +163,4 @@ export default function PotPage() {
     </div>
   );
 }
+
