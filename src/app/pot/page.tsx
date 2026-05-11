@@ -9,40 +9,13 @@ const ROAST_POT = '0xdcacb893ebaa8b1b1d839353346dcdf556836b02' as const;
 const CUSD = '0x765DE816845861e75A25fCA122bb6898B8B1282a' as const;
 
 const roastPotAbi = [
-  {
-    name: 'potByDay',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ type: 'uint64', name: 'utcDay' }],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'fund',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { type: 'uint64', name: 'utcDay' },
-      { type: 'uint256', name: 'amount' },
-    ],
-    outputs: [],
-  },
+  { name: 'potByDay', type: 'function', stateMutability: 'view', inputs: [{ type: 'uint64', name: 'utcDay' }], outputs: [{ type: 'uint256' }] },
+  { name: 'fund', type: 'function', stateMutability: 'nonpayable', inputs: [{ type: 'uint64', name: 'utcDay' }, { type: 'uint256', name: 'amount' }], outputs: [] },
 ] as const;
 
 const cUSDAbi = [
-  {
-    name: 'allowance',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ type: 'address' }, { type: 'address' }],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'approve',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ type: 'address' }, { type: 'uint256' }],
-    outputs: [{ type: 'bool' }],
-  },
+  { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ type: 'address' }, { type: 'address' }], outputs: [{ type: 'uint256' }] },
+  { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ type: 'address' }, { type: 'uint256' }], outputs: [{ type: 'bool' }] },
 ] as const;
 
 export default function PotPage() {
@@ -55,9 +28,9 @@ export default function PotPage() {
 
   const today = useMemo(() => BigInt(Math.floor(Date.now() / 86400000)), []);
 
-  const APPROVAL_LIMIT = parseUnits('1000', 18); // one-time generous approval
+  const APPROVAL_LIMIT = parseUnits('1000', 18);
 
-  // Read current allowance
+  // Read allowance
   const { data: allowanceRaw, refetch: refetchAllowance } = useReadContract({
     address: CUSD,
     abi: cUSDAbi,
@@ -84,17 +57,6 @@ export default function PotPage() {
       abi: cUSDAbi,
       functionName: 'approve',
       args: [ROAST_POT, APPROVAL_LIMIT],
-      onSuccess: () => {
-        // Auto-trigger fund after approval is mined
-        setTimeout(() => {
-          writeContract({
-            address: ROAST_POT,
-            abi: roastPotAbi,
-            functionName: 'fund',
-            args: [today, fundAmount],
-          });
-        }, 800); // tiny delay so the UI updates smoothly
-      },
     });
   };
 
@@ -126,52 +88,27 @@ export default function PotPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 pt-10">
-        {/* Hero Pot */}
+        {/* Hero */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-yellow-400 text-black text-sm font-bold px-6 py-2 rounded-3xl mb-6">
-            🔥 LIVE DAILY POT
-          </div>
+          <div className="inline-flex items-center gap-2 bg-yellow-400 text-black text-sm font-bold px-6 py-2 rounded-3xl mb-6">🔥 LIVE DAILY POT</div>
           <h2 className="text-7xl font-mono font-bold text-yellow-400 tracking-tighter mb-2">
             {currentPot} <span className="text-4xl text-white/70">cUSD</span>
           </h2>
           <p className="text-xl text-white/70">Today’s prize pool • Winner awarded at midnight UTC</p>
         </div>
 
-        {/* What is the Daily Roast Pot? */}
+        {/* What is the Pot */}
         <div className="bg-zinc-900 border border-yellow-400/30 rounded-3xl p-8 mb-12">
           <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
             <span className="text-yellow-400">🔥</span>
             What is the Daily Roast Pot?
           </h3>
           <div className="space-y-6 text-[15px]">
-            <p>
-              Every time someone pays <span className="text-yellow-400 font-medium">10¢ (cUSD)</span> to get roasted, 
-              that money automatically goes into today’s <strong>Roast Pot</strong>.
-            </p>
+            <p>Every time someone pays <span className="text-yellow-400 font-medium">10¢ (cUSD)</span> to get roasted, that money automatically goes into today’s <strong>Roast Pot</strong>.</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-black/50 rounded-2xl p-5">
-                <div className="text-yellow-400 text-xl mb-2">💰</div>
-                <p className="font-medium">Funded by the community</p>
-                <p className="text-white/60 text-sm">Every paid roast adds to the pot</p>
-              </div>
-              <div className="bg-black/50 rounded-2xl p-5">
-                <div className="text-yellow-400 text-xl mb-2">🏆</div>
-                <p className="font-medium">One winner per day</p>
-                <p className="text-white/60 text-sm">Awarded at midnight UTC</p>
-              </div>
-              <div className="bg-black/50 rounded-2xl p-5">
-                <div className="text-yellow-400 text-xl mb-2">📈</div>
-                <p className="font-medium">You can win it</p>
-                <p className="text-white/60 text-sm">Best/funniest roast of the day</p>
-              </div>
-            </div>
-            <div className="pt-4 border-t border-white/10">
-              <p className="font-medium text-yellow-400 mb-2">How do you win the pot?</p>
-              <ul className="text-white/80 space-y-2 text-sm">
-                <li className="flex gap-2"><span className="text-yellow-400">1.</span> Create the most savage/funny roast of the day</li>
-                <li className="flex gap-2"><span className="text-yellow-400">2.</span> Get people to roast you or share your verdict</li>
-                <li className="flex gap-2"><span className="text-yellow-400">3.</span> Top the leaderboard — owner awards the full pot</li>
-              </ul>
+              <div className="bg-black/50 rounded-2xl p-5"><div className="text-yellow-400 text-xl mb-2">💰</div><p className="font-medium">Funded by the community</p><p className="text-white/60 text-sm">Every paid roast adds to the pot</p></div>
+              <div className="bg-black/50 rounded-2xl p-5"><div className="text-yellow-400 text-xl mb-2">🏆</div><p className="font-medium">One winner per day</p><p className="text-white/60 text-sm">Awarded at midnight UTC</p></div>
+              <div className="bg-black/50 rounded-2xl p-5"><div className="text-yellow-400 text-xl mb-2">📈</div><p className="font-medium">You can win it</p><p className="text-white/60 text-sm">Best/funniest roast of the day</p></div>
             </div>
           </div>
         </div>
@@ -215,8 +152,6 @@ export default function PotPage() {
             </>
           )}
         </div>
-
-        {/* Last 7 Days History (paste your existing history code here if you have it) */}
 
         {/* Footer note */}
         <div className="mt-16 text-center text-white/30 text-xs">
