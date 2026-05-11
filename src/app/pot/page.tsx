@@ -221,14 +221,6 @@ export default function PotPage() {
           )}
         </div>
 
-        {/* History */}
-        <div>
-          <h3 className="text-xl font-bold mb-6 flex items-center justify-between">
-            Last 7 Days
-          </h3>
-          {/* ... keep your existing history code here (potHistory map) ... */}
-        </div>
-
         {/* Footer note */}
         <div className="mt-16 text-center text-white/30 text-xs">
           RoastPot • 0xdcacb893ebaa8b1b1d839353346dcdf556836b02
