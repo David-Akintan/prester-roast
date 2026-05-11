@@ -65,7 +65,7 @@ export default function PotPage() {
   const today = useMemo(() => BigInt(Math.floor(Date.now() / 86400000)), []);
 
   // Fixed large approval limit (one-time approval)
-  const APPROVAL_LIMIT = parseUnits('1', 18); // 1000 cUSD — more than enough for normal use
+  const APPROVAL_LIMIT = parseUnits('1', 18); // 1 cUSD — enough for normal use
 
   // Read current allowance
   const { data: allowanceRaw, refetch: refetchAllowance } = useReadContract({
