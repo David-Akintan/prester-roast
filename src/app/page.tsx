@@ -204,6 +204,29 @@ export default function Home() {
         </p>
       )}
 
+      {/* Daily Roast Pot Teaser — links to the new /pot page */}
+      <div className="rounded-none border border-[var(--color-surface-2)] bg-[var(--color-surface-1)] p-5 flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🔥</span>
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-yellow-400">
+              DAILY ROAST POT
+            </span>
+          </div>
+          <p className="text-[13px] text-[var(--color-text-secondary)] mt-1 leading-tight">
+            Community prize pool • 10¢ roasts fund it • Win daily
+          </p>
+        </div>
+        
+        <Link
+          href="/pot"
+          className="shrink-0 px-6 py-3 bg-yellow-400 hover:bg-white text-black font-bold text-sm rounded-none flex items-center gap-2 transition-all active:scale-95"
+        >
+          VIEW &amp; FUND
+          <span className="text-lg leading-none">→</span>
+        </Link>
+      </div>
+
       <footer className="pt-6 border-t border-[var(--color-surface-2)] text-center text-[11px] font-mono text-[var(--color-text-secondary)] space-x-3 uppercase tracking-[0.15em]">
         <Link href="/stats" className="hover:text-[var(--color-text-primary)] transition">
           /stats
