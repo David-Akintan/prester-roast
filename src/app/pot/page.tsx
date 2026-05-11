@@ -25,12 +25,6 @@ const roastPotAbi = [
     ],
     outputs: [],
   },
-  {
-    name: 'paused',
-    type: 'function',
-    stateMutability: 'view',
-    outputs: [{ type: 'bool' }],
-  },
 ] as const;
 
 export default function PotPage() {
