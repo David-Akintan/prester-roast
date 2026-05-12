@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const stats = await readStats();
     return NextResponse.json(stats, {
-      headers: { "Cache-Control": "public, max-age=10, s-maxage=10" },
+      headers: { "Cache-Control": "no-store, max-age=0" },
     });
   } catch (err) {
     console.error("/api/stats error:", err);

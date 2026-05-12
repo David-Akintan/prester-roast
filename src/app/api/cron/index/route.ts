@@ -30,6 +30,7 @@ const ROAST_ISSUED_EVENT = parseAbiItem(
 // Limit how far we scan in a single tick — Forno typically caps around
 // 5000-10000 blocks per getLogs call. We stay well below.
 const MAX_BLOCKS_PER_TICK = 2000n;
+const DEFAULT_INDEXER_FROM_BLOCK = 66_191_232n;
 
 // Roast-of-the-Day voter eligibility window: 7 days. Celo blocks every ~5s
 // → ~120,960 blocks. Round up to be safe; the backfill stops as soon as it
@@ -63,11 +64,11 @@ export async function GET(req: Request) {
   try {
     const head = await client.getBlockNumber();
     const last = await getLastIndexedBlock();
-    // Default starting block — set via env for first deploy. Otherwise
-    // start MAX_BLOCKS_PER_TICK behind tip to seed without huge scans.
+    // Default starting block: set via env for overrides. Otherwise start
+    // from the deployed RoastCourt contract's first block.
     const seedBlock = process.env.INDEXER_FROM_BLOCK
       ? BigInt(process.env.INDEXER_FROM_BLOCK)
-      : head - MAX_BLOCKS_PER_TICK;
+      : DEFAULT_INDEXER_FROM_BLOCK;
 
     const fromBlock = last !== null ? last + 1n : seedBlock;
     if (fromBlock > head) {
