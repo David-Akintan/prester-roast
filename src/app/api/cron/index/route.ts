@@ -28,7 +28,9 @@ const ROAST_ISSUED_EVENT = parseAbiItem(
 
 // Limit how far we scan in a single tick — Forno typically caps around
 // 5000-10000 blocks per getLogs call. We stay well below.
-const MAX_BLOCKS_PER_TICK = 2000n;
+const BLOCKS_PER_LOG_SCAN = 2000n;
+const MAX_FORWARD_SCANS_PER_TICK = 20;
+const FORWARD_SCAN_BUDGET_MS = 45_000;
 const DEFAULT_INDEXER_FROM_BLOCK = 66_191_232n;
 
 // Roast-of-the-Day voter eligibility window: 7 days. Celo blocks every ~5s
