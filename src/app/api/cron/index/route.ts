@@ -19,9 +19,8 @@ import { PERSONAS, type Persona } from "@/lib/prompts";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Indexer cron — pulls new RoastIssued events into KV every 60s.
-// Triggered by Vercel Cron via `vercel.json`. Protected by CRON_SECRET
-// (Vercel sends it in the Authorization header on production crons).
+// Indexer endpoint: pulls new RoastIssued events into KV.
+// Triggered by GitHub Actions. Protected by CRON_SECRET.
 
 const ROAST_ISSUED_EVENT = parseAbiItem(
   "event RoastIssued(uint256 indexed id, address indexed user, uint8 persona, bytes32 roastTextHash, bytes32 inputHash, uint256 amountPaid)",
