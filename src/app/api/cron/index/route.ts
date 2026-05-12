@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { createPublicClient, http, parseAbiItem, type PublicClient, type Transport } from "viem";
+import {
+  createPublicClient,
+  http,
+  parseAbiItem,
+  type PublicClient,
+  type Transport,
+} from "viem";
 import { celo } from "viem/chains";
 
 import { ROAST_COURT_ABI, ROAST_COURT_ADDRESS, CHAIN_ID } from "@/lib/contract";
@@ -59,7 +65,9 @@ export async function GET(req: Request) {
 
   const client = createPublicClient({
     chain: celo,
-    transport: http(process.env.NEXT_PUBLIC_RPC_URL ?? "https://forno.celo.org"),
+    transport: http(
+      process.env.NEXT_PUBLIC_RPC_URL ?? "https://forno.celo.org",
+    ),
   });
 
   try {
@@ -73,9 +81,16 @@ export async function GET(req: Request) {
 
     const fromBlock = last !== null ? last + 1n : seedBlock;
     if (fromBlock > head) {
-      return NextResponse.json({ scanned: 0, head: head.toString(), message: "up to date" });
+      return NextResponse.json({
+        scanned: 0,
+        head: head.toString(),
+        message: "up to date",
+      });
     }
-    const toBlock = head - fromBlock > MAX_BLOCKS_PER_TICK ? fromBlock + MAX_BLOCKS_PER_TICK : head;
+    const toBlock =
+      head - fromBlock > BLOCKS_PER_LOG_SCAN
+        ? fromBlock + BLOCKS_PER_LOG_SCAN
+        : head;
 
     const logs = await client.getLogs({
       address: ROAST_COURT_ADDRESS,
@@ -93,14 +108,17 @@ export async function GET(req: Request) {
         roastTextHash?: `0x${string}`;
         amountPaid?: bigint;
       };
-      if (args.id === undefined || !args.user || args.persona === undefined) continue;
+      if (args.id === undefined || !args.user || args.persona === undefined)
+        continue;
 
       const personaName: Persona = PERSONAS[args.persona] ?? "brutal";
       const block = await client.getBlock({ blockHash: log.blockHash });
 
       // Join onchain id ⇄ ipfs cid via the (roastTextHash → cid) bridge
       // written by /api/roast at pin time.
-      const cid = args.roastTextHash ? await cidForHash(args.roastTextHash) : null;
+      const cid = args.roastTextHash
+        ? await cidForHash(args.roastTextHash)
+        : null;
 
       const amountPaid = args.amountPaid ?? 0n;
       const entry: VerdictFeedEntry = {
@@ -119,7 +137,8 @@ export async function GET(req: Request) {
       if (cid) await setCidForVerdictId(args.id.toString(), cid);
       // Roast of the Day eligibility — every paid event refreshes the wallet's
       // 7-day voter flag and increments that day's contribution counter.
-      if (isPaid) await markPaidRoaster(args.user, amountPaid, Number(block.timestamp));
+      if (isPaid)
+        await markPaidRoaster(args.user, amountPaid, Number(block.timestamp));
       recorded += 1;
     }
 
@@ -169,7 +188,8 @@ async function runEligibilityBackfill(
   client: CeloPublicClient,
   head: bigint,
 ): Promise<BackfillReport> {
-  const cutoff = head > ELIGIBILITY_WINDOW_BLOCKS ? head - ELIGIBILITY_WINDOW_BLOCKS : 0n;
+  const cutoff =
+    head > ELIGIBILITY_WINDOW_BLOCKS ? head - ELIGIBILITY_WINDOW_BLOCKS : 0n;
   let cursor = await getEligibilityBackfilledThroughBlock();
 
   // First-run init: anchor cursor at `head` so the first chunk covers the
@@ -183,7 +203,8 @@ async function runEligibilityBackfill(
   }
 
   const toBlock = cursor;
-  const fromBlock = toBlock > MAX_BLOCKS_PER_TICK ? toBlock - MAX_BLOCKS_PER_TICK : 0n;
+  const fromBlock =
+    toBlock > BLOCKS_PER_LOG_SCAN ? toBlock - BLOCKS_PER_LOG_SCAN : 0n;
 
   if (fromBlock >= toBlock) {
     await setEligibilityBackfilledThroughBlock(0n);
