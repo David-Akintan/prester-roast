@@ -393,21 +393,21 @@ export default function PotPage() {
               UTC day {today.toString()} / {utcDate}
             </p>
             <h2 className="mt-3 font-display text-5xl sm:text-7xl leading-none text-[var(--color-text-primary)]">
-              {potQuery.isLoading ? "--" : formatCusd(todayPot)}
+              {potQuery.isLoading ? "--" : formatCusd(contractBalance)}
               <span className="ml-2 align-baseline font-mono text-base sm:text-xl text-[var(--color-text-secondary)]">
                 cUSD
               </span>
             </h2>
-          </div>
 
-          <div className="text-left sm:text-right font-mono text-xs text-[var(--color-text-secondary)]">
-            <p className="uppercase tracking-[0.18em]">Resets in</p>
-            <p className="mt-1 text-lg text-[var(--color-text-primary)]">
-              {utcTimeLeft}
-            </p>
-            <p className="mt-2">
-              {isSettled ? "Settled" : isPaused ? "Paused" : "Open"}
-            </p>
+            <div className="text-left sm:text-right font-mono text-xs text-[var(--color-text-secondary)]">
+              <p className="uppercase tracking-[0.18em]">Resets in</p>
+              <p className="mt-1 text-lg text-[var(--color-text-primary)]">
+                {utcTimeLeft}
+              </p>
+              <p className="mt-2">
+                {isSettled ? "Settled" : isPaused ? "Paused" : "Open"}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -418,7 +418,7 @@ export default function PotPage() {
             Daily accounting
           </p>
           <p className="mt-2 text-lg font-mono text-[var(--color-text-primary)]">
-            {formatCusd(todayPot)} cUSD
+            {formatCusd(contractBalance)} cUSD
           </p>
         </div>
         <div className="border border-[var(--color-surface-2)] bg-[#101011] p-4">
