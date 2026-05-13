@@ -1,11 +1,5 @@
 @import "tailwindcss";
 
-/* Tailwind v4 theme tokens. Each --color-* / --font-* is a literal value —
- * not var(--same-name) — to avoid the v4 self-reference loop documented in
- * the project plan §Risks. next/font writes its own --font-display and
- * --font-mono onto <html> from layout.tsx; the cascade lets next/font's
- * self-hosted refs shadow these system fallbacks at runtime.
- */
 @theme {
   --color-bg: #0A0A0A;
   --color-surface-1: #1A1A1B;
