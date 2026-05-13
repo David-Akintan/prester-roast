@@ -128,7 +128,9 @@ export default function Home() {
             <span
               className="text-[11px] font-mono"
               style={{
-                color: charOver ? "var(--color-accent-brutal)" : "var(--color-text-secondary)",
+                color: charOver
+                  ? "var(--color-accent-brutal)"
+                  : "var(--color-text-secondary)",
               }}
             >
               {input.length}/{MAX_CHARS}
@@ -219,21 +221,33 @@ export default function Home() {
       {/* Bottom Navigation - nerdos.fun style */}
       <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-surface-1 border-t border-surface-2 px-4 py-2 z-50">
         <div className="flex items-center justify-around text-xs font-mono">
-          <Link href="/" className="flex flex-col items-center gap-1 text-yellow-400">
+          <Link
+            href="/about"
+            className="flex flex-col items-center gap-1 text-yellow-400"
+          >
             <span className="text-2xl">🏠</span>
-            <span className="text-[10px]">HOME</span>
+            <span className="text-[10px]">ABOUT</span>
           </Link>
-          <Link href="/pot" className="flex flex-col items-center gap-1 text-text-secondary hover:text-text-primary transition">
+          <Link
+            href="/pot"
+            className="flex flex-col items-center gap-1 text-text-secondary hover:text-text-primary transition"
+          >
             <span className="text-2xl">🔥</span>
             <span className="text-[10px]">POT</span>
           </Link>
-          <Link href="/stats" className="flex flex-col items-center gap-1 text-text-secondary hover:text-text-primary transition">
+          <Link
+            href="/stats"
+            className="flex flex-col items-center gap-1 text-text-secondary hover:text-text-primary transition"
+          >
             <span className="text-2xl">📊</span>
             <span className="text-[10px]">STATS</span>
           </Link>
-          <Link href="/leaderboard" className="flex flex-col items-center gap-1 text-text-secondary hover:text-text-primary transition">
+          <Link
+            href="/leaderboard"
+            className="flex flex-col items-center gap-1 text-text-secondary hover:text-text-primary transition"
+          >
             <span className="text-2xl">🏆</span>
-            <span className="text-[10px]">LEADER</span>
+            <span className="text-[10px]">LEADERBOARD</span>
           </Link>
         </div>
       </nav>
