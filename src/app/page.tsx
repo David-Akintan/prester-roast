@@ -75,169 +75,168 @@ export default function Home() {
   const charOver = input.length > RED_AT;
 
   return (
-    <main
-      className="mx-auto max-w-md px-4 py-6 sm:py-10 space-y-6 fade-in-up"
-      style={{
-        ["--color-judge" as string]: PERSONA_ACCENT[persona],
-        ["--color-judge-deep" as string]: PERSONA_ACCENT_DEEP[persona],
-      }}
-    >
-      <header className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-baseline gap-2">
-            <span aria-hidden className="text-[var(--color-text-primary)] text-xl leading-none">⚖</span>
-            <h1
-              className={[
-                "font-display text-3xl tracking-tight leading-none text-[var(--color-text-primary)]",
-                persona === "brutal" ? "glitch" : "",
-              ].join(" ")}
-            >
-              Roast Court
-            </h1>
+    <>
+      <main className="mx-auto max-w-md px-4 pb-24 pt-6 space-y-8 min-h-screen bg-bg">
+        {/* Header - nerdos style */}
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-yellow-400 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+              ⚖️
+            </div>
+            <div>
+              <h1 className="font-display text-3xl tracking-tighter text-text-primary">
+                Roast Court
+              </h1>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-text-secondary -mt-0.5">
+                AI JUDGE • ONCHAIN
+              </p>
+            </div>
           </div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mt-2">
-            AI judge · onchain · 10¢
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-1.5 shrink-0">
-          <StreakBadge user={address} />
-          <ConnectWallet />
-          <OpenInMiniPayButton />
-        </div>
-      </header>
 
-      {topic ? (
-        <Docket topic={topic.topic} alreadyClaimed={freeClaimedToday} />
-      ) : topErr ? (
-        <p className="text-xs font-mono text-red-300 px-3 py-2 rounded-none border border-red-500/60 bg-red-500/10">
-          Daily topic unavailable: {topErr}
-        </p>
-      ) : (
-        <div
-          aria-hidden
-          className="h-[68px] rounded-none border border-[var(--color-surface-2)] bg-[var(--color-surface-1)] animate-pulse"
-        />
-      )}
-
-      <section className="space-y-3">
-        <label className="block text-[11px] uppercase tracking-[0.2em] font-mono text-[var(--color-text-secondary)]">
-          The Bench
-        </label>
-        <PersonaPicker value={persona} onChange={setPersona} />
-      </section>
-
-      <section className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label
-            htmlFor="roast-input"
-            className="block text-[11px] uppercase tracking-[0.2em] font-mono text-[var(--color-text-secondary)]"
-          >
-            Evidence
-          </label>
-          <span
-            className="text-[11px] font-mono"
-            style={{
-              color: charOver
-                ? "var(--color-accent-brutal)"
-                : "var(--color-text-secondary)",
-            }}
-          >
-            {input.length}/{MAX_CHARS}
-          </span>
-        </div>
-        <textarea
-          id="roast-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value.slice(0, MAX_CHARS))}
-          placeholder={
-            mode === "free"
-              ? "Reply to today's topic — keep it under 280 chars."
-              : "Submit your evidence. Tweet, code, CV, hot take — whatever you want judged."
-          }
-          rows={4}
-          className="evidence-inset w-full resize-none rounded-none border border-[var(--color-surface-2)] bg-[var(--color-surface-1)] px-4 py-3 font-mono text-sm leading-relaxed text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]/60 focus:outline-none focus:border-[var(--color-judge)] focus:ring-2 focus:ring-[var(--color-judge)]/40 transition-all"
-        />
-      </section>
-
-      <div className="flex gap-0 rounded-none bg-[var(--color-surface-1)] border border-[var(--color-surface-2)] text-sm font-mono">
-        <button
-          type="button"
-          onClick={() => setMode("paid")}
-          className={[
-            "flex-1 min-h-[40px] rounded-none px-3 uppercase tracking-[0.15em] transition-all border-r border-[var(--color-surface-2)]",
-            mode === "paid"
-              ? "bg-[var(--color-judge)] text-[var(--color-bg)]"
-              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]",
-          ].join(" ")}
-        >
-          Paid Docket
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("free")}
-          disabled={freeClaimedToday || !topic}
-          className={[
-            "flex-1 min-h-[40px] rounded-none px-3 uppercase tracking-[0.15em] transition-all",
-            mode === "free"
-              ? "bg-[var(--color-judge)] text-[var(--color-bg)]"
-              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]",
-            freeClaimedToday || !topic ? "opacity-40 cursor-not-allowed" : "",
-          ].join(" ")}
-        >
-          Pro Bono 1×/day {freeClaimedToday ? "✓" : ""}
-        </button>
-      </div>
-
-      <RoastButton
-        persona={persona}
-        userInput={inputForRoast}
-        isFree={mode === "free"}
-        disabled={
-          !inputValid || (mode === "free" && (freeClaimedToday || !topic))
-        }
-        onSuccess={handleSuccess}
-      />
-
-      {isConnected && address && (
-        <p className="text-center text-xs font-mono text-[var(--color-text-secondary)]">
-          signed in as {truncateAddress(address)}
-        </p>
-      )}
-
-      {/* Daily Roast Pot Teaser — links to the new /pot page */}
-      <div className="rounded-none border border-[var(--color-surface-2)] bg-[var(--color-surface-1)] p-5 flex items-center justify-between gap-4">
-        <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🔥</span>
-            <span className="font-mono text-xs uppercase tracking-[0.2em] text-yellow-400">
-              DAILY ROAST POT
+            <StreakBadge user={address} />
+            <ConnectWallet />
+            <OpenInMiniPayButton />
+          </div>
+        </header>
+
+        {topic ? (
+          <Docket topic={topic.topic} alreadyClaimed={freeClaimedToday} />
+        ) : topErr ? (
+          <p className="text-xs font-mono text-red-300 px-3 py-2 rounded-3xl border border-red-500/60 bg-red-500/10">
+            Daily topic unavailable: {topErr}
+          </p>
+        ) : (
+          <div className="h-[68px] rounded-3xl border border-surface-2 bg-surface-1 animate-pulse" />
+        )}
+
+        <section className="space-y-3">
+          <label className="block text-[11px] uppercase tracking-widest font-mono text-text-secondary px-1">
+            THE BENCH
+          </label>
+          <PersonaPicker value={persona} onChange={setPersona} />
+        </section>
+
+        <section className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <label
+              htmlFor="roast-input"
+              className="block text-[11px] uppercase tracking-widest font-mono text-text-secondary"
+            >
+              EVIDENCE
+            </label>
+            <span
+              className="text-[11px] font-mono"
+              style={{
+                color: charOver ? "var(--color-accent-brutal)" : "var(--color-text-secondary)",
+              }}
+            >
+              {input.length}/{MAX_CHARS}
             </span>
           </div>
-          <p className="text-[13px] text-[var(--color-text-secondary)] mt-1 leading-tight">
-            Community prize pool • 10¢ roasts fund it • Win daily
-          </p>
-        </div>
-        
-        <Link
-          href="/pot"
-          className="shrink-0 px-6 py-3 bg-yellow-400 hover:bg-white text-black font-bold text-sm rounded-none flex items-center gap-2 transition-all active:scale-95"
-        >
-          VIEW &amp; FUND
-          <span className="text-lg leading-none">→</span>
-        </Link>
-      </div>
+          <textarea
+            id="roast-input"
+            value={input}
+            onChange={(e) => setInput(e.target.value.slice(0, MAX_CHARS))}
+            placeholder={
+              mode === "free"
+                ? "Reply to today's topic — keep it under 280 chars."
+                : "Submit your evidence. Tweet, code, CV, hot take — whatever you want judged."
+            }
+            rows={4}
+            className="evidence-inset w-full resize-none rounded-3xl border border-surface-2 bg-surface-1 px-5 py-4 font-mono text-sm leading-relaxed text-text-primary placeholder:text-text-secondary/60 focus:outline-none focus:border-[var(--color-judge)]"
+          />
+        </section>
 
-      <footer className="pt-6 border-t border-[var(--color-surface-2)] text-center text-[11px] font-mono text-[var(--color-text-secondary)] space-x-3 uppercase tracking-[0.15em]">
-        <Link href="/stats" className="hover:text-[var(--color-text-primary)] transition">
-          /stats
-        </Link>
-        <Link href="/leaderboard" className="hover:text-[var(--color-text-primary)] transition">
-          /leaderboard
-        </Link>
-        <Link href="/about" className="hover:text-[var(--color-text-primary)] transition">
-          /about
-        </Link>
-      </footer>
-    </main>
+        <div className="flex gap-0 rounded-3xl bg-surface-1 border border-surface-2 text-sm font-mono overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setMode("paid")}
+            className={[
+              "flex-1 py-3 uppercase tracking-widest transition-all",
+              mode === "paid"
+                ? "bg-[var(--color-judge)] text-bg"
+                : "text-text-secondary hover:text-text-primary",
+            ].join(" ")}
+          >
+            PAID DOCKET
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("free")}
+            disabled={freeClaimedToday || !topic}
+            className={[
+              "flex-1 py-3 uppercase tracking-widest transition-all",
+              mode === "free"
+                ? "bg-[var(--color-judge)] text-bg"
+                : "text-text-secondary hover:text-text-primary",
+              freeClaimedToday || !topic ? "opacity-40 cursor-not-allowed" : "",
+            ].join(" ")}
+          >
+            PRO BONO 1×/DAY {freeClaimedToday ? "✓" : ""}
+          </button>
+        </div>
+
+        <RoastButton
+          persona={persona}
+          userInput={inputForRoast}
+          isFree={mode === "free"}
+          disabled={
+            !inputValid || (mode === "free" && (freeClaimedToday || !topic))
+          }
+          onSuccess={handleSuccess}
+        />
+
+        {isConnected && address && (
+          <p className="text-center text-xs font-mono text-text-secondary">
+            signed in as {truncateAddress(address)}
+          </p>
+        )}
+
+        {/* Daily Roast Pot Teaser - card style */}
+        <div className="rounded-3xl border border-surface-2 bg-surface-1 p-5 flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🔥</span>
+              <span className="font-mono text-xs uppercase tracking-widest text-yellow-400">
+                DAILY ROAST POT
+              </span>
+            </div>
+            <p className="text-[13px] text-text-secondary mt-1 leading-tight">
+              Community prize pool • 10¢ roasts fund it • Win daily
+            </p>
+          </div>
+          <Link
+            href="/pot"
+            className="shrink-0 px-6 py-3 bg-yellow-400 hover:bg-white text-black font-bold text-sm rounded-2xl flex items-center gap-2 transition-all active:scale-95"
+          >
+            VIEW &amp; FUND
+            <span className="text-lg leading-none">→</span>
+          </Link>
+        </div>
+      </main>
+
+      {/* Bottom Navigation - nerdos.fun style */}
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-surface-1 border-t border-surface-2 px-4 py-2 z-50">
+        <div className="flex items-center justify-around text-xs font-mono">
+          <Link href="/" className="flex flex-col items-center gap-1 text-yellow-400">
+            <span className="text-2xl">🏠</span>
+            <span className="text-[10px]">HOME</span>
+          </Link>
+          <Link href="/pot" className="flex flex-col items-center gap-1 text-text-secondary hover:text-text-primary transition">
+            <span className="text-2xl">🔥</span>
+            <span className="text-[10px]">POT</span>
+          </Link>
+          <Link href="/stats" className="flex flex-col items-center gap-1 text-text-secondary hover:text-text-primary transition">
+            <span className="text-2xl">📊</span>
+            <span className="text-[10px]">STATS</span>
+          </Link>
+          <Link href="/leaderboard" className="flex flex-col items-center gap-1 text-text-secondary hover:text-text-primary transition">
+            <span className="text-2xl">🏆</span>
+            <span className="text-[10px]">LEADER</span>
+          </Link>
+        </div>
+      </nav>
+    </>
   );
 }
