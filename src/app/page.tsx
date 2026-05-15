@@ -77,7 +77,6 @@ export default function Home() {
   return (
     <>
       <main className="mx-auto max-w-md px-4 pb-24 pt-6 space-y-8 min-h-screen bg-bg">
-        {/* Header - nerdos style */}
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-yellow-400 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
@@ -87,9 +86,6 @@ export default function Home() {
               <h1 className="font-display text-3xl tracking-tighter text-text-primary">
                 Roast Court
               </h1>
-              <p className="font-mono text-[10px] uppercase tracking-widest text-text-secondary -mt-0.5">
-                AI JUDGE • ONCHAIN
-              </p>
             </div>
           </div>
 
@@ -142,8 +138,8 @@ export default function Home() {
             onChange={(e) => setInput(e.target.value.slice(0, MAX_CHARS))}
             placeholder={
               mode === "free"
-                ? "Reply to today's topic — keep it under 280 chars."
-                : "Submit your evidence. Tweet, code, CV, hot take — whatever you want judged."
+                ? "Have a roast by an AI agent as an appetizer to get your day started. First roast is on the house but make sure to keep it under 280 chars."
+                : "Got the nerve to withstand a roast from an AI agent? Give your best shot."
             }
             rows={4}
             className="evidence-inset w-full resize-none rounded-3xl border border-surface-2 bg-surface-1 px-5 py-4 font-mono text-sm leading-relaxed text-text-primary placeholder:text-text-secondary/60 focus:outline-none focus:border-[var(--color-judge)]"
@@ -175,7 +171,7 @@ export default function Home() {
               freeClaimedToday || !topic ? "opacity-40 cursor-not-allowed" : "",
             ].join(" ")}
           >
-            PRO BONO 1×/DAY {freeClaimedToday ? "✓" : ""}
+            Free Roast {freeClaimedToday ? "✓" : ""}
           </button>
         </div>
 
@@ -218,15 +214,14 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Bottom Navigation - nerdos.fun style */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-surface-1 border-t border-surface-2 px-4 py-2 z-50">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-surface-1 border-t border-surface-2 px-4 py-2 z-50 safe-area-bottom">
         <div className="flex items-center justify-around text-xs font-mono">
           <Link
-            href="/about"
+            href="/"
             className="flex flex-col items-center gap-1 text-yellow-400"
           >
             <span className="text-2xl">🏠</span>
-            <span className="text-[10px]">ABOUT</span>
+            <span className="text-[10px]">HOME</span>
           </Link>
           <Link
             href="/pot"
