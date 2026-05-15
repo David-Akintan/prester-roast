@@ -78,21 +78,39 @@ export default function Home() {
     <>
       <main className="mx-auto max-w-md px-4 pb-24 pt-6 space-y-8 min-h-screen bg-bg">
         <header className="flex items-center justify-between">
+          {/* Left side - Logo + Title */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-yellow-400 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
               ⚖️
             </div>
-            <div>
-              <h1 className="font-display text-3xl tracking-tighter text-text-primary">
-                Roast Court
-              </h1>
-            </div>
+            <h1 className="font-display text-2xl tracking-tighter text-text-primary">
+              Roast Court
+            </h1>
           </div>
 
+          {/* Right side - Pills */}
           <div className="flex items-center gap-2">
+            {/* Roast Count */}
+            <div className="flex items-center gap-1.5 bg-surface-1 border border-surface-2 rounded-3xl px-4 py-1 text-sm font-mono">
+              <span className="text-orange-400">🔥</span>
+              <span className="font-semibold text-text-primary">17</span>
+              {/* <span className="text-text-secondary text-xs">ROASTS</span> */}
+            </div>
+
+            {/* Wallet Address */}
+            {isConnected && address && (
+              <div className="flex items-center gap-1.5 bg-surface-1 border border-surface-2 rounded-3xl px-4 py-1 text-sm font-mono">
+                <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                <span className="text-text-primary">
+                  {address.slice(0, 6)}...{address.slice(-4)}
+                </span>
+              </div>
+            )}
+
+            {/* Connect / Streak */}
             <StreakBadge user={address} />
             <ConnectWallet />
-            <OpenInMiniPayButton />
+            {/* <OpenInMiniPayButton /> */}
           </div>
         </header>
 

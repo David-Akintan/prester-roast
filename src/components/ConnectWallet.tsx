@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from "wagmi";
+import {
+  useAccount,
+  useConnect,
+  useDisconnect,
+  useChainId,
+  useSwitchChain,
+} from "wagmi";
 import { celo } from "wagmi/chains";
 
 import { isMiniPay } from "@/lib/minipay";
@@ -14,7 +20,12 @@ import { truncateAddress } from "@/lib/format";
 export function ConnectWallet() {
   const [inMiniPay, setInMiniPay] = useState<boolean | null>(null);
   const { address, isConnected } = useAccount();
-  const { connectors, connect, isPending: connectPending, error: connectErr } = useConnect();
+  const {
+    connectors,
+    connect,
+    isPending: connectPending,
+    error: connectErr,
+  } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain, isPending: switchPending } = useSwitchChain();
@@ -45,13 +56,15 @@ export function ConnectWallet() {
   // Connected on Celo — show truncated-address chip with disconnect
   if (isConnected && address) {
     return (
-      <div className="lift inline-flex items-center gap-1.5 rounded-none border-2 border-[#262626] bg-[#161618] px-3 py-1 text-[11px] font-mono uppercase tracking-[0.15em] text-bone/85 hover:border-ember/60">
-        <span className="size-1.5 rounded-full bg-emerald-400" aria-label="connected" />
-        <span>{truncateAddress(address)}</span>
+      <div className="flex items-center gap-1.5 bg-surface-1 border border-surface-2 rounded-3xl px-4 py-1 text-sm font-mono">
+        <span className="w-2 h-2 bg-emerald-400 rounded-full" />
+        <span className="text-text-primary font-medium">
+          {truncateAddress(address)}
+        </span>
         <button
           type="button"
           onClick={() => disconnect()}
-          className="ml-1 text-bone/40 hover:text-bone transition"
+          className="ml-1 text-text-secondary hover:text-text-primary transition-colors text-lg leading-none"
           aria-label="disconnect"
         >
           ×
@@ -60,22 +73,12 @@ export function ConnectWallet() {
     );
   }
 
-  // Not connected — Connect button + connector picker
-  // Skip injected if window.ethereum is missing (avoids dead "Browser wallet"
-  // option in incognito / desktop without MetaMask).
-  const visibleConnectors = connectors.filter((c) => {
-    if (c.id === "injected") {
-      return typeof window !== "undefined" && Boolean((window as { ethereum?: unknown }).ethereum);
-    }
-    return true;
-  });
-
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="lift inline-flex items-center gap-2 rounded-none border-2 border-bone bg-gradient-to-b from-bone to-[#d6cfc3] text-ink px-3 py-1.5 text-xs font-mono uppercase tracking-[0.15em] hover:from-white"
+        className="lift inline-flex items-center gap-2 rounded-3xl border border-surface-2 bg-surface-1 hover:bg-white hover:text-black px-5 py-2 text-x font-mono uppercase tracking-[0.15em] text-text-primary transition-all"
       >
         Connect
       </button>
@@ -88,35 +91,21 @@ export function ConnectWallet() {
             className="fixed inset-0 z-40 cursor-default"
             aria-hidden
           />
-          <div
-            role="menu"
-            className="absolute right-0 top-full mt-2 z-50 min-w-[200px] rounded-none border-2 border-[#262626] bg-[#0a0a0b]/95 backdrop-blur-[5px] p-1 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.8)]"
-          >
-            {visibleConnectors.length === 0 ? (
-              <p className="text-[11px] font-mono text-bone/55 px-3 py-2 leading-snug">
-                No browser wallet found. Tap Open in MiniPay above, or install a wallet that supports WalletConnect.
-              </p>
-            ) : (
-              visibleConnectors.map((c) => (
-                <button
-                  key={c.uid}
-                  type="button"
-                  disabled={connectPending}
-                  onClick={() => {
-                    connect({ connector: c });
-                    setOpen(false);
-                  }}
-                  className="block w-full text-left px-3 py-2 rounded-none text-sm font-mono text-bone/85 hover:bg-ember/15 hover:text-ember transition disabled:opacity-50"
-                >
-                  {labelFor(c.id, c.name)}
-                </button>
-              ))
-            )}
-            {connectErr && (
-              <p className="text-[11px] font-mono text-red-300/90 px-3 py-2 leading-snug" role="alert">
-                {connectErr.message}
-              </p>
-            )}
+          <div className="absolute right-0 top-full mt-2 z-50 min-w-[200px] rounded-3xl border border-surface-2 bg-surface-1 p-1 shadow-2xl">
+            {connectors.map((c) => (
+              <button
+                key={c.uid}
+                type="button"
+                disabled={connectPending}
+                onClick={() => {
+                  connect({ connector: c });
+                  setOpen(false);
+                }}
+                className="block w-full text-left px-4 py-3 rounded-2xl text-sm font-medium hover:bg-surface-2 transition"
+              >
+                {c.name}
+              </button>
+            ))}
           </div>
         </>
       )}

@@ -35,7 +35,7 @@ export function Docket({
   }, [topic]);
 
   const caseNo = `RC-${utcDayIndex()}`;
-  const status = alreadyClaimed ? "PRO BONO CLAIMED" : "PRO BONO OPEN";
+  const status = alreadyClaimed ? "FREE ROAST CLAIMED" : "FREE ROAST AVAILABLE";
 
   return (
     <div className="border border-[var(--color-surface-2)] bg-[var(--color-surface-1)]">
