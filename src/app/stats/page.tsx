@@ -140,11 +140,6 @@ export default async function StatsPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-bone/45 shrink-0">
-                  <span className="text-bone/65">
-                    {PERSONA_LABEL[
-                      entry.persona as keyof typeof PERSONA_LABEL
-                    ] || "Unknown"}
-                  </span>
                   <a
                     href={explorerTxUrl(entry.txHash)}
                     target="_blank"
