@@ -3,8 +3,6 @@ import { formatCusd } from "@/lib/format";
 export interface StatsTilesProps {
   total: number;
   paid: number;
-  last24h: number;
-  uniqueWallets24h: number;
   volumeWei: string;
 }
 
@@ -45,10 +43,12 @@ export function StatsTiles(props: StatsTilesProps) {
   const volume = formatCusd(BigInt(props.volumeWei || "0"));
   return (
     <div className="grid grid-cols-2 gap-2.5">
-      <Tile label="Roasts (all-time)" value={props.total.toLocaleString()} accent />
+      <Tile
+        label="Roasts (all-time)"
+        value={props.total.toLocaleString()}
+        accent
+      />
       <Tile label="Paid roasts" value={props.paid.toLocaleString()} />
-      <Tile label="Last 24h" value={props.last24h.toLocaleString()} />
-      <Tile label="Unique wallets · 24h" value={props.uniqueWallets24h.toLocaleString()} />
       <div className="col-span-2">
         <Tile label="cUSD volume" value={volume} suffix="cUSD" accent />
       </div>

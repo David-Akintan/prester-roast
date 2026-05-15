@@ -111,8 +111,6 @@ export default async function StatsPage() {
       <StatsTiles
         total={stats.total}
         paid={stats.paid}
-        last24h={stats.last24h}
-        uniqueWallets24h={stats.uniqueWallets24h}
         volumeWei={stats.volumeWei}
       />
 
