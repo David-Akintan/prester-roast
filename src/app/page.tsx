@@ -219,11 +219,11 @@ export default function Home() {
       <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-surface-1 border-t border-surface-2 px-4 py-2 z-50 safe-area-bottom">
         <div className="flex items-center justify-around text-xs font-mono">
           <Link
-            href="/"
+            href="/about"
             className="flex flex-col items-center gap-1 text-yellow-400"
           >
             <span className="text-2xl">🏠</span>
-            <span className="text-[10px]">HOME</span>
+            <span className="text-[10px]">ABOUT</span>
           </Link>
           <Link
             href="/pot"
