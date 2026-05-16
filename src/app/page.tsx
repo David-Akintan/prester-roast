@@ -87,10 +87,14 @@ export default function Home() {
               Roast Court
             </h1>
           </div>
-          <div classname=“flex items-center gap-2”>
+
+          {/* Right side - Pills */}
+          <div className="flex items-center gap-2">
+
             {/* Connect / Streak */}
             <StreakBadge user={address} />
             <ConnectWallet />
+            <OpenInMiniPayButton />
             {/* <OpenInMiniPayButton /> */}
           </div>
         </header>
