@@ -94,7 +94,6 @@ export default function Home() {
             {/* Connect / Streak */}
             <StreakBadge user={address} />
             <ConnectWallet />
-            <OpenInMiniPayButton />
             {/* <OpenInMiniPayButton /> */}
           </div>
         </header>
