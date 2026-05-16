@@ -88,25 +88,6 @@ export default function Home() {
             </h1>
           </div>
 
-          {/* Right side - Pills */}
-          <div className="flex items-center gap-2">
-            {/* Roast Count */}
-            <div className="flex items-center gap-1.5 bg-surface-1 border border-surface-2 rounded-3xl px-4 py-1 text-sm font-mono">
-              <span className="text-orange-400">🔥</span>
-              <span className="font-semibold text-text-primary">17</span>
-              {/* <span className="text-text-secondary text-xs">ROASTS</span> */}
-            </div>
-
-            {/* Wallet Address */}
-            {isConnected && address && (
-              <div className="flex items-center gap-1.5 bg-surface-1 border border-surface-2 rounded-3xl px-4 py-1 text-sm font-mono">
-                <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                <span className="text-text-primary">
-                  {address.slice(0, 6)}...{address.slice(-4)}
-                </span>
-              </div>
-            )}
-
             {/* Connect / Streak */}
             <StreakBadge user={address} />
             <ConnectWallet />
