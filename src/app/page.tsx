@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type CSSProperties } from "react";
 import { useAccount, useReadContract } from "wagmi";
 
 import { PersonaPicker } from "@/components/PersonaPicker";
@@ -61,6 +61,12 @@ export default function Home() {
     return lastDay !== 0 && lastDay === utcDayIndex();
   }, [lastFree]);
 
+  useEffect(() => {
+    if (mode === "free" && (freeClaimedToday || !topic)) {
+      setMode("paid");
+    }
+  }, [freeClaimedToday, mode, topic]);
+
   const inputForRoast =
     mode === "free" && topic
       ? `[${topic.topic}] ${input}`.trim()
@@ -73,10 +79,17 @@ export default function Home() {
   };
 
   const charOver = input.length > RED_AT;
+  const judgeStyle = {
+    "--color-judge": PERSONA_ACCENT[persona],
+    "--color-judge-deep": PERSONA_ACCENT_DEEP[persona],
+  } as CSSProperties;
 
   return (
     <>
-      <main className="mx-auto max-w-md px-4 pb-24 pt-6 space-y-8 min-h-screen bg-bg">
+      <main
+        style={judgeStyle}
+        className="mx-auto max-w-lg px-4 pb-24 pt-6 space-y-8 min-h-screen bg-bg"
+      >
         <header className="flex items-center justify-between">
           {/* Left side - Logo + Title */}
           <div className="flex items-center gap-3">

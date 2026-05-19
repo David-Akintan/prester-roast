@@ -6,7 +6,6 @@ import {
   type PublicClient,
   type Transport,
 } from "viem";
-import { celo } from "viem/chains";
 
 import { ROAST_COURT_ABI, ROAST_COURT_ADDRESS, CHAIN_ID } from "@/lib/contract";
 import {
@@ -43,10 +42,11 @@ const DEFAULT_INDEXER_FROM_BLOCK = 66_191_232n;
 // → ~120,960 blocks. Round up to be safe; the backfill stops as soon as it
 // crosses the threshold.
 const ELIGIBILITY_WINDOW_BLOCKS = 130_000n;
+const CELO_CHAIN_ID = 42220;
 
 function authorize(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // dev mode — allow
+  if (!secret) return process.env.NODE_ENV !== "production";
   const auth = req.headers.get("authorization") ?? "";
   return auth === `Bearer ${secret}`;
 }
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  if (CHAIN_ID !== celo.id) {
+  if (CHAIN_ID !== CELO_CHAIN_ID) {
     return NextResponse.json(
       { error: `cron only configured for celo mainnet (got ${CHAIN_ID})` },
       { status: 500 },
@@ -64,7 +64,6 @@ export async function GET(req: Request) {
   }
 
   const client = createPublicClient({
-    chain: celo,
     transport: http(
       process.env.NEXT_PUBLIC_RPC_URL ?? "https://forno.celo.org",
     ),
@@ -182,7 +181,7 @@ interface BackfillReport {
  * point the eligibility set already covers the full voting window, and any
  * older history is irrelevant because the per-wallet flag has a 7-day TTL.
  */
-type CeloPublicClient = PublicClient<Transport, typeof celo>;
+type CeloPublicClient = PublicClient<Transport>;
 
 async function runEligibilityBackfill(
   client: CeloPublicClient,

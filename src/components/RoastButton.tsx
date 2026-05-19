@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAccount, useConnect, useWriteContract } from "wagmi";
+import { useAccount, useConnect, useSignMessage, useWriteContract } from "wagmi";
 import { getPublicClient, readContract } from "@wagmi/core";
 import { decodeEventLog, type TransactionReceipt } from "viem";
 
@@ -17,9 +17,18 @@ import {
 import { config as wagmiConfig } from "@/lib/wagmi";
 import { getFeeCurrency } from "@/lib/minipay";
 import { formatPriceLabel } from "@/lib/format";
+import { buildRoastRequestMessage } from "@/lib/roast-auth";
+import { utcDayIndex } from "@/lib/topics";
 import { CourtroomOverlay, type OverlayPhase } from "@/components/CourtroomOverlay";
 
-type Phase = "idle" | "judging" | "approving" | "roasting" | "done" | "error";
+type Phase =
+  | "idle"
+  | "signing"
+  | "judging"
+  | "approving"
+  | "roasting"
+  | "done"
+  | "error";
 
 interface RoastApiResponse {
   roast: string;
@@ -59,6 +68,7 @@ export function RoastButton({
   const [phase, setPhase] = useState<Phase>("idle");
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const { writeContractAsync } = useWriteContract();
+  const { signMessageAsync } = useSignMessage();
 
   const fail = useCallback(
     (msg: string) => {
@@ -81,14 +91,33 @@ export function RoastButton({
     if (disabled) return;
 
     setErrMsg(null);
-    setPhase("judging");
 
     let api: RoastApiResponse;
     try {
+      const utcDay = utcDayIndex();
+      const canonicalInput = userInput.trim();
+      const requestMessage = buildRoastRequestMessage({
+        wallet: address,
+        persona,
+        userInput: canonicalInput,
+        isFree,
+        utcDay,
+      });
+      setPhase("signing");
+      const requestSig = await signMessageAsync({ message: requestMessage });
+      setPhase("judging");
+
       const res = await fetch("/api/roast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: address, persona, userInput, isFree }),
+        body: JSON.stringify({
+          wallet: address,
+          persona,
+          userInput: canonicalInput,
+          isFree,
+          utcDay,
+          requestSig,
+        }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -100,7 +129,13 @@ export function RoastButton({
       }
       api = json as RoastApiResponse;
     } catch (e) {
-      return fail(e instanceof Error ? e.message : "Network error reaching judge.");
+      const msg =
+        e instanceof Error && /user rejected|user denied/i.test(e.message)
+          ? "You cancelled the signature request."
+          : e instanceof Error
+            ? e.message
+            : "Network error reaching judge.";
+      return fail(msg);
     }
 
     const publicClient = getPublicClient(wagmiConfig);
@@ -171,7 +206,18 @@ export function RoastButton({
             : "Transaction failed.";
       fail(msg);
     }
-  }, [address, connectWallet, disabled, fail, isFree, onSuccess, persona, userInput, writeContractAsync]);
+  }, [
+    address,
+    connectWallet,
+    disabled,
+    fail,
+    isFree,
+    onSuccess,
+    persona,
+    signMessageAsync,
+    userInput,
+    writeContractAsync,
+  ]);
 
   const idleLabel = !address
     ? "SIGN TO ENTER COURT"

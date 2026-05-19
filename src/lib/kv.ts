@@ -17,28 +17,49 @@ import type { Persona } from "./prompts";
 
 const PREFIX = {
   rate: (wallet: string) => `roast:rate:${wallet.toLowerCase()}`,
+  rateIp: (ip: string) => `roast:rate:ip:${ip}`,
   freeClaim: (wallet: string, utcDay: number) =>
     `roast:freeClaim:${wallet.toLowerCase()}:${utcDay}`,
 } as const;
 
 export const RATE_LIMIT_PER_HOUR = 30;
+export const IP_RATE_LIMIT_PER_HOUR = 60;
 const RATE_TTL_SECONDS = 3600;
+
+async function checkAndIncrementKey(
+  key: string,
+  limit: number,
+): Promise<{
+  ok: boolean;
+  current: number;
+  limit: number;
+}> {
+  const current = (await kv.incr(key)) as number;
+  if (current === 1) {
+    await kv.expire(key, RATE_TTL_SECONDS);
+  }
+  return {
+    ok: current <= limit,
+    current,
+    limit,
+  };
+}
 
 export async function checkAndIncrementRate(wallet: string): Promise<{
   ok: boolean;
   current: number;
   limit: number;
 }> {
-  const key = PREFIX.rate(wallet);
-  const current = (await kv.incr(key)) as number;
-  if (current === 1) {
-    await kv.expire(key, RATE_TTL_SECONDS);
-  }
-  return {
-    ok: current <= RATE_LIMIT_PER_HOUR,
-    current,
-    limit: RATE_LIMIT_PER_HOUR,
-  };
+  return checkAndIncrementKey(PREFIX.rate(wallet), RATE_LIMIT_PER_HOUR);
+}
+
+export async function checkAndIncrementIpRate(ip: string): Promise<{
+  ok: boolean;
+  current: number;
+  limit: number;
+}> {
+  const safeIp = ip.replace(/[^a-zA-Z0-9:._-]/g, "_").slice(0, 80);
+  return checkAndIncrementKey(PREFIX.rateIp(safeIp || "unknown"), IP_RATE_LIMIT_PER_HOUR);
 }
 
 export async function hasClaimedFreeToday(wallet: string, utcDay: number): Promise<boolean> {
@@ -122,24 +143,28 @@ export interface StatsSnapshot {
   leaderboard: Array<{ wallet: string; count: number }>;
 }
 
-export async function readStats(): Promise<StatsSnapshot> {
-  const [total, paid, last24h, wallets24h, volumeWei, feedRaw, lbRaw] = await Promise.all([
-    kv.get<number>("stats:roasts:total"),
-    kv.get<number>("stats:roasts:paid"),
-    kv.get<number>("stats:roasts:24h"),
-    kv.scard("stats:wallets:24h"),
-    kv.get<string>("stats:volume:total"),
-    kv.lrange<string>("verdicts:feed", 0, 19),
-    kv.zrange<string[]>("stats:leaderboard", 0, 9, { rev: true, withScores: true }),
-  ]);
-
-  const feed: VerdictFeedEntry[] = (feedRaw ?? []).flatMap((s) => {
+export async function readVerdictFeed(limit = 20): Promise<VerdictFeedEntry[]> {
+  const cappedLimit = Math.min(Math.max(limit, 1), 1000);
+  const feedRaw = await kv.lrange<string>("verdicts:feed", 0, cappedLimit - 1);
+  return (feedRaw ?? []).flatMap((s) => {
     try {
       return [JSON.parse(s) as VerdictFeedEntry];
     } catch {
       return [];
     }
   });
+}
+
+export async function readStats(): Promise<StatsSnapshot> {
+  const [total, paid, last24h, wallets24h, volumeWei, feed, lbRaw] = await Promise.all([
+    kv.get<number>("stats:roasts:total"),
+    kv.get<number>("stats:roasts:paid"),
+    kv.get<number>("stats:roasts:24h"),
+    kv.scard("stats:wallets:24h"),
+    kv.get<string>("stats:volume:total"),
+    readVerdictFeed(20),
+    kv.zrange<string[]>("stats:leaderboard", 0, 9, { rev: true, withScores: true }),
+  ]);
 
   const leaderboard: Array<{ wallet: string; count: number }> = [];
   if (Array.isArray(lbRaw)) {

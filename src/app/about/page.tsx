@@ -35,7 +35,7 @@ export default function AboutPage() {
         <p className="text-base text-bone/85 leading-relaxed">
           The roast text is stored via IPFS, while the blockchain secures a
           cryptographic hash. This ensures your roast is verifiable and
-          immutable without bloating the chain, utilizing the same "thin-chain"
+          immutable without bloating the chain, utilizing the same &quot;thin-chain&quot;
           architecture as Prester&apos;s flagship dispute-resolution protocols.
           The roast text itself lives on IPFS.
         </p>
@@ -53,7 +53,7 @@ export default function AboutPage() {
         </p>
         <p className="text-base text-bone/85 leading-relaxed">
           <em>The Daily Ritual:</em> Every wallet gets one free daily roast on a
-          fresh, global topic. Once that's gone, the paid loop ensures the Court
+          fresh, global topic. Once that&apos;s gone, the paid loop ensures the Court
           stays sharp and the stakes stay high.
         </p>
       </section>
@@ -72,7 +72,7 @@ export default function AboutPage() {
           </li>
           <li>
             <em>The Verdict: </em>The AI judge processes your input, calculates
-            a "Severity Score," and signs the result.
+            a &quot;Severity Score,&quot; and signs the result.
           </li>
           <li>
             <em>Onchain Anchor: </em>You sign two quick transactions: an{" "}

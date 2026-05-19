@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { isAddress, getAddress } from "viem";
+import {
+  createPublicClient,
+  getAddress,
+  http,
+  isAddress,
+  verifyMessage,
+} from "viem";
 
 import { moderate } from "@/lib/moderation";
 import { generateRoast } from "@/lib/judge";
@@ -9,22 +15,30 @@ import { signVerdict, hashUtf8 } from "@/lib/signer";
 import { pinVerdict } from "@/lib/ipfs";
 import { isPersona, type Persona } from "@/lib/prompts";
 import {
+  checkAndIncrementIpRate,
   checkAndIncrementRate,
-  hasClaimedFreeToday,
-  markFreeClaimed,
   mapHashToCid,
 } from "@/lib/kv";
 import { dailyTopic } from "@/lib/topics";
 import { CHAIN_ID, ROAST_COURT_ADDRESS } from "@/lib/contract";
+import { buildRoastRequestMessage } from "@/lib/roast-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const MAX_BODY_BYTES = 12_000;
+const MAX_DAY_SKEW = 1;
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? "https://forno.celo.org";
 
 const RoastBodySchema = z.object({
   wallet: z.string().refine(isAddress, "invalid wallet"),
   persona: z.string().refine(isPersona, "invalid persona"),
   userInput: z.string().min(1).max(2000),
   isFree: z.boolean().optional().default(false),
+  utcDay: z.number().int().nonnegative(),
+  requestSig: z
+    .string()
+    .regex(/^0x[0-9a-fA-F]{130}$/, "invalid request signature"),
 });
 
 // GET: returns today's daily-topic so the client can render
@@ -35,9 +49,66 @@ export async function GET() {
   });
 }
 
+function requestIp(req: Request): string {
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  if (forwardedFor) return forwardedFor.split(",")[0]?.trim() ?? "unknown";
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
+
+async function hasClaimedFreeOnchain(
+  wallet: `0x${string}`,
+  utcDay: number,
+): Promise<boolean> {
+  try {
+    const client = createPublicClient({
+      transport: http(RPC_URL),
+    });
+    const lastFree = await client.readContract({
+      address: ROAST_COURT_ADDRESS,
+      abi: [
+        {
+          type: "function",
+          name: "lastFreeRoast",
+          stateMutability: "view",
+          inputs: [{ name: "user", type: "address" }],
+          outputs: [{ type: "uint64" }],
+        },
+      ],
+      functionName: "lastFreeRoast",
+      args: [wallet],
+    });
+    return Number(lastFree) === utcDay;
+  } catch (err) {
+    console.warn("free roast onchain precheck failed:", err);
+    return false;
+  }
+}
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const contentType = req.headers.get("content-type") ?? "";
+    if (!contentType.toLowerCase().includes("application/json")) {
+      return NextResponse.json(
+        { error: "content-type must be application/json" },
+        { status: 415 },
+      );
+    }
+
+    const contentLength = Number(req.headers.get("content-length") ?? "0");
+    if (contentLength > MAX_BODY_BYTES) {
+      return NextResponse.json(
+        { error: "request body too large" },
+        { status: 413 },
+      );
+    }
+
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "invalid json" }, { status: 400 });
+    }
+
     const parsed = RoastBodySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -50,6 +121,30 @@ export async function POST(req: Request) {
     const persona = parsed.data.persona as Persona;
     const userInput = parsed.data.userInput.trim();
     const isFree = parsed.data.isFree;
+    const today = dailyTopic();
+
+    if (Math.abs(parsed.data.utcDay - today.utcDay) > MAX_DAY_SKEW) {
+      return NextResponse.json(
+        { error: "request signature is stale" },
+        { status: 400 },
+      );
+    }
+
+    const authMessage = buildRoastRequestMessage({
+      wallet,
+      persona,
+      userInput,
+      isFree,
+      utcDay: parsed.data.utcDay,
+    });
+    const authorized = await verifyMessage({
+      address: wallet,
+      message: authMessage,
+      signature: parsed.data.requestSig as `0x${string}`,
+    });
+    if (!authorized) {
+      return NextResponse.json({ error: "invalid signature" }, { status: 401 });
+    }
 
     // 1. Moderation (PII / self-harm / threats / length)
     const mod = moderate(userInput);
@@ -60,19 +155,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Rate-limit by wallet (rolling 1h window)
-    const rate = await checkAndIncrementRate(wallet);
-    if (!rate.ok) {
+    // 2. Rate-limit by verified wallet and request IP (rolling 1h windows)
+    const ipRate = await checkAndIncrementIpRate(requestIp(req));
+    if (!ipRate.ok) {
       return NextResponse.json(
-        { error: `Slow down — ${rate.limit}/hour cap. Try again later.` },
+        { error: `Slow down - ${ipRate.limit}/hour cap. Try again later.` },
         { status: 429 },
       );
     }
 
-    // 3. If free roast: server-side dedupe (the contract does this too,
-    //    but doing it pre-Gemini saves a wasted API call)
-    const today = dailyTopic();
-    if (isFree && (await hasClaimedFreeToday(wallet, today.utcDay))) {
+    const rate = await checkAndIncrementRate(wallet);
+    if (!rate.ok) {
+      return NextResponse.json(
+        { error: `Slow down - ${rate.limit}/hour cap. Try again later.` },
+        { status: 429 },
+      );
+    }
+
+    // 3. If free roast: preflight the contract state. Do not mutate KV here:
+    //    unsigned KV claims let attackers burn another wallet's free slot.
+    if (isFree && (await hasClaimedFreeOnchain(wallet, today.utcDay))) {
       return NextResponse.json(
         { error: "You already claimed today's free roast." },
         { status: 409 },
@@ -121,12 +223,6 @@ export async function POST(req: Request) {
       console.warn("Pinata pin failed:", err);
     }
 
-    // 8. Mark free claimed (only after sign succeeds — avoid burning a slot
-    //    on a failed pipeline)
-    if (isFree) {
-      await markFreeClaimed(wallet, today.utcDay);
-    }
-
     return NextResponse.json({
       roast: verdict.roast,
       severity: verdict.severity,
@@ -142,18 +238,23 @@ export async function POST(req: Request) {
     // Surface per-provider failure breakdown so the client can debug from
     // DevTools without diving into Vercel function logs every time.
     if (err instanceof AllJudgesExhaustedError) {
-      console.error("/api/roast — all judges failed:", err.attempts);
+      console.error("/api/roast - all judges failed:", err.attempts);
       return NextResponse.json(
         {
           error:
             "All judge providers failed. Check the `attempts` array for per-provider details.",
-          attempts: err.attempts,
+          ...(process.env.NODE_ENV !== "production"
+            ? { attempts: err.attempts }
+            : {}),
         },
         { status: 503 },
       );
     }
     const msg = err instanceof Error ? err.message : "internal error";
     console.error("/api/roast error:", err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json(
+      { error: process.env.NODE_ENV === "production" ? "internal error" : msg },
+      { status: 500 },
+    );
   }
 }

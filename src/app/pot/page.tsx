@@ -446,7 +446,7 @@ export default function PotPage() {
           <div>
             <h2 className="font-display text-3xl leading-none">Fund the pot</h2>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              Adds cUSD to today's on-chain potByDay entry.
+              Adds cUSD to today&apos;s on-chain potByDay entry.
             </p>
           </div>
           {address && (

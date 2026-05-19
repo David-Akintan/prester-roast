@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createPublicClient, http } from "viem";
-import { celo } from "viem/chains";
 
 import { VerdictCard } from "@/components/VerdictCard";
 import { ROAST_COURT_ABI, ROAST_COURT_ADDRESS } from "@/lib/contract";
@@ -32,7 +31,7 @@ interface OnchainVerdict {
 const READ_BACKOFF_MS = [0, 350, 700, 1200, 1800];
 
 async function readOnchainVerdict(id: bigint): Promise<OnchainVerdict | null> {
-  const client = createPublicClient({ chain: celo, transport: http(RPC_URL) });
+  const client = createPublicClient({ transport: http(RPC_URL) });
   for (const delay of READ_BACKOFF_MS) {
     if (delay > 0) await new Promise((r) => setTimeout(r, delay));
     try {

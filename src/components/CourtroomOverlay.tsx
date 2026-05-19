@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-export type OverlayPhase = "judging" | "approving" | "roasting" | "done";
+export type OverlayPhase = "signing" | "judging" | "approving" | "roasting" | "done";
 
 const PHASE_LINES: Record<OverlayPhase, string[]> = {
+  signing: ["> VERIFYING WALLET AUTHORITY..."],
   judging: ["> SWEARING IN THE AI...", "> READING THE EVIDENCE..."],
   approving: ["> AUTHORIZING COURT FEES (cUSD)..."],
   roasting: ["> JURY DELIBERATING ON-CHAIN...", "> SEALING THE VERDICT..."],

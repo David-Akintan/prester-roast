@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 import { createPublicClient, http } from "viem";
-import { celo } from "viem/chains";
 
 import { ROAST_COURT_ABI, ROAST_COURT_ADDRESS } from "@/lib/contract";
 import { PERSONAS, PERSONA_LABEL, type Persona } from "@/lib/prompts";
@@ -25,7 +24,7 @@ export default async function OG({ params }: { params: { id: string } }) {
 
   if (id !== null) {
     try {
-      const client = createPublicClient({ chain: celo, transport: http(RPC_URL) });
+      const client = createPublicClient({ transport: http(RPC_URL) });
       const result = (await client.readContract({
         address: ROAST_COURT_ADDRESS,
         abi: ROAST_COURT_ABI,

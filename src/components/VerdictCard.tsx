@@ -38,9 +38,9 @@ export function VerdictCard(props: VerdictCardProps) {
       </header>
 
       <p className="font-display text-2xl sm:text-[26px] leading-snug text-bone">
-        <span aria-hidden className="text-ember/80 mr-1">"</span>
+        <span aria-hidden className="text-ember/80 mr-1">&quot;</span>
         {roast}
-        <span aria-hidden className="text-ember/80 ml-1">"</span>
+        <span aria-hidden className="text-ember/80 ml-1">&quot;</span>
       </p>
 
       {typeof severity === "number" && (
