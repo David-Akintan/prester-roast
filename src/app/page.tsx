@@ -90,11 +90,10 @@ export default function Home() {
 
           {/* Right side - Pills */}
           <div className="flex items-center gap-2">
-
             {/* Connect / Streak */}
             <StreakBadge user={address} />
             <ConnectWallet />
-            {/* <OpenInMiniPayButton /> */}
+            <OpenInMiniPayButton />
           </div>
         </header>
 
